@@ -13,7 +13,7 @@ jobs:
       - name: Descargar codigo fuente
         uses: actions/checkout@v4
 
-      - name: Configurar Node.js 20
+      - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -27,11 +27,13 @@ jobs:
       - name: Configurar Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Instalar dependencias de Capacitor y sincronizar assets
+      - name: Preparar assets y proyecto Android con Capacitor
         run: |
           cd capacitor-app
           node sync-www.js
           npm install
+          npx cap telemetry off
+          npx cap add android || true
           npx cap sync android
 
       - name: Dar permisos de ejecucion a Gradlew
@@ -39,7 +41,7 @@ jobs:
           cd capacitor-app/android
           chmod +x gradlew
 
-      - name: Compilar APK con Gradle (assembleDebug)
+      - name: Compilar APK Debug con Gradle
         run: |
           cd capacitor-app/android
           ./gradlew assembleDebug --stacktrace
