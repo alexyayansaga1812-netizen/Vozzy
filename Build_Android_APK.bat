@@ -61,6 +61,7 @@ if not exist "android" (
 
 :: 5. Sincronizar assets con Android
 echo [4/4] Sincronizando con el proyecto Android...
+call npx cap telemetry off >nul 2>nul
 call npx cap sync android
 if %ERRORLEVEL% neq 0 (
     echo [ERROR] Fallo al sincronizar assets con Android.

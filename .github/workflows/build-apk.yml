@@ -1,0 +1,51 @@
+name: Generar APK de Android (Vozzy)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar codigo fuente
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Configurar Java 17 (JDK)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Configurar Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Instalar dependencias de Capacitor y sincronizar assets
+        run: |
+          cd capacitor-app
+          node sync-www.js
+          npm install
+          npx cap sync android
+
+      - name: Dar permisos de ejecucion a Gradlew
+        run: |
+          cd capacitor-app/android
+          chmod +x gradlew
+
+      - name: Compilar APK con Gradle (assembleDebug)
+        run: |
+          cd capacitor-app/android
+          ./gradlew assembleDebug --stacktrace
+
+      - name: Subir APK como artefacto de descarga
+        uses: actions/upload-artifact@v4
+        with:
+          name: Vozzy-Android-APK
+          path: capacitor-app/android/app/build/outputs/apk/debug/app-debug.apk

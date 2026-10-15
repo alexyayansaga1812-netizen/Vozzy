@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <!-- viewport seguro para dispositivos con notch / Dynamic Island -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Vozzy - Tu voz, en un toque</title>
+
+  <!-- SEO -->
+  <meta name="description" content="Vozzy es una herramienta de comunicación aumentativa y alternativa (CAA) para personas mudas o con dificultades del habla. Funciona 100% offline.">
+  <meta name="keywords" content="CAA, AAC, comunicación aumentativa, alternativa, mudos, habla, offline, accesibilidad">
+  <meta name="robots" content="index, follow">
+
+  <!-- PWA Theme -->
+  <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#4c1d95" media="(prefers-color-scheme: dark)">
+
+  <!-- iOS / Safari PWA (Add to Home Screen) -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Vozzy">
+  <meta name="format-detection" content="telephone=no">
+
+  <!-- Android Chrome -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="Vozzy">
+
+  <!-- Favicons & App Icons -->
+  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png">
+
+  <!-- Web App Manifest -->
+  <link rel="manifest" href="./manifest.json" crossorigin="use-credentials">
+
+  <!-- Preload critical assets para inicio rápido -->
+  <link rel="preload" href="./style.css" as="style">
+  <link rel="preload" href="./app.js" as="script">
+  <link rel="preload" href="./fonts/inter-400.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="./fonts/inter-600.ttf" as="font" type="font/ttf" crossorigin>
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+  <div id="app">
+    <!-- Top Header Bar -->
+    <header class="header">
+      <div class="logo-group" onclick="navigateToHome()">
+        <div class="logo-badge" id="logo-icon-container"></div>
+        <div>
+          <h1 class="brand-title">Vozzy</h1>
+          <div class="user-greeting-pill" id="user-greeting-name">Hola</div>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <!-- SOS button: always visible, opens emergency panel -->
+        <button id="sos-header-btn" class="sos-pill-btn" aria-label="Emergencia SOS">SOS</button>
+        <button id="nav-install-btn" class="install-nav-btn hidden" title="Instalar aplicación" aria-label="Instalar aplicación" onclick="triggerAndroidInstall()"></button>
+        <button id="theme-toggle-btn" class="btn-icon" title="Cambiar tema" aria-label="Cambiar tema" onclick="toggleTheme()"></button>
+        <button id="settings-toggle-btn" class="btn-icon" title="Configuración de voz" aria-label="Configuración de voz" onclick="openSettingsModal()"></button>
+        <button id="profile-toggle-btn" class="btn-icon" title="Perfil de usuario" aria-label="Perfil de usuario" onclick="openProfileModal()"></button>
+      </div>
+    </header>
+
+    <!-- 1. HOME VIEW (Category Selector) -->
+    <main id="home-view" class="main-view">
+      <div class="section-header">
+        <h2 class="section-title">Categorías de comunicación</h2>
+      </div>
+
+      <div class="cards-grid" id="home-category-grid">
+        <!-- Dynamically rendered categories -->
+      </div>
+    </main>
+
+    <!-- 2. CATEGORY VIEW (Phrases Grid) -->
+    <main id="category-view" class="main-view hidden">
+      <div class="back-btn-row">
+        <button id="back-to-home-btn" class="btn btn-secondary" onclick="navigateToHome()"></button>
+      </div>
+
+      <div class="section-header">
+        <h2 class="section-title" id="category-title">Categoría</h2>
+      </div>
+
+      <div class="cards-grid" id="category-phrases-grid">
+        <!-- Dynamically rendered phrases -->
+      </div>
+    </main>
+
+    <!-- 3. CUSTOM MESSAGE WRITER VIEW -->
+    <main id="custom-writer-view" class="main-view hidden">
+      <div class="back-btn-row">
+        <button id="back-from-writer-btn" class="btn btn-secondary" onclick="navigateToHome()"></button>
+      </div>
+
+      <div class="section-header">
+        <h2 class="section-title">Escribe lo que quieras decir</h2>
+      </div>
+
+      <div class="custom-msg-box">
+        <textarea id="custom-textarea" class="custom-textarea" placeholder="Escribe tu mensaje aquí..."></textarea>
+        
+        <div class="msg-actions-row">
+          <button class="btn btn-primary" onclick="speakCustomWriterText()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span>▶ Hablar</span>
+          </button>
+          <button class="btn btn-secondary" onclick="clearCustomWriterText()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            <span>Borrar todo</span>
+          </button>
+        </div>
+
+        <div class="quick-phrases-wrapper">
+          <div class="quick-phrases-title">Frases rápidas:</div>
+          <div class="quick-phrases-chips">
+            <button class="chip-btn" onclick="appendQuickPhrase('Sí')">Sí</button>
+            <button class="chip-btn" onclick="appendQuickPhrase('No')">No</button>
+            <button class="chip-btn" onclick="appendQuickPhrase('Gracias')">Gracias</button>
+            <button class="chip-btn" onclick="appendQuickPhrase('Por favor')">Por favor</button>
+            <button class="chip-btn" onclick="appendQuickPhrase('Ayuda')">Ayuda</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- FLOATING VOICE BAR -->
+    <div id="floating-voice-bar" class="floating-voice-bar hidden">
+      <div class="speaking-indicator-wave">
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <div id="floating-spoken-text" style="font-weight: 700; font-size: 0.95rem;"></div>
+      <button class="floating-voice-btn" onclick="repeatLastSpeech()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        <span>Repetir</span>
+      </button>
+      <button class="floating-voice-btn" onclick="stopSpeech()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+        <span>Detener</span>
+      </button>
+    </div>
+
+    <!-- MODAL: WELCOME SCREEN -->
+    <div id="welcome-modal" class="modal-overlay hidden">
+      <div class="modal-card" style="text-align: center;">
+        <div class="ios-app-icon-lg" style="margin: 0 auto;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
+        </div>
+        <h2 style="font-size: 1.6rem;">Bienvenido a Vozzy</h2>
+        <p style="color: var(--text-muted); font-size: 1rem;">Tu voz, en un toque. Diseñada para expresarte de forma libre, clara y rápida.</p>
+
+        <div class="form-group" style="margin-top: 12px;">
+          <label for="welcome-name-input" class="form-label">¿Cómo te llamas?</label>
+          <input type="text" id="welcome-name-input" class="form-input" placeholder="Tu nombre (opcional)">
+        </div>
+
+        <button class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="saveWelcomeName()">Comenzar</button>
+      </div>
+    </div>
+
+    <!-- MODAL: FIRST-USE TUTORIAL -->
+    <div id="tutorial-modal" class="modal-overlay hidden">
+      <div class="modal-card tutorial-card">
+        <div class="tutorial-slider">
+          <div class="slide-content">
+            <div class="slide-illustration" id="slide-illu"></div>
+            <h3 class="slide-title" id="slide-title">Elige una categoría</h3>
+            <p class="slide-desc" id="slide-desc">Explora frases organizadas por categorías comunes como Casa, Doctor y Escuela.</p>
+          </div>
+
+          <div style="width: 100%;">
+            <div class="dots-indicator" id="tutorial-dots"></div>
+            <button id="tutorial-next-btn" class="btn btn-primary" style="width: 100%;" onclick="nextTutorialSlide()">Siguiente</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: USER PROFILE -->
+    <div id="profile-modal" class="modal-overlay hidden">
+      <div class="modal-card">
+        <button class="modal-close-btn" onclick="document.getElementById('profile-modal').classList.add('hidden')">✕</button>
+        <h2>Perfil de usuario</h2>
+
+        <div class="form-group">
+          <label for="profile-name-input" class="form-label">Nombre del usuario</label>
+          <input type="text" id="profile-name-input" class="form-input" placeholder="Escribe tu nombre">
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+          <button class="btn btn-primary" onclick="saveProfile()">Guardar cambios</button>
+          <!-- Emergency data access from profile -->
+          <button id="profile-emergency-btn" class="btn btn-secondary">Editar datos de emergencia</button>
+          <button class="btn btn-secondary" onclick="showTutorialModal(); document.getElementById('profile-modal').classList.add('hidden');">Ver tutorial de nuevo</button>
+          <button class="btn btn-secondary" style="border-color: var(--border-subtle); color: var(--text-muted);" onclick="clearProfileName()">Borrar nombre</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: SETTINGS (VOICE SPEED & PITCH & COLORS) -->
+    <div id="settings-modal" class="modal-overlay hidden">
+      <div class="modal-card">
+        <button class="modal-close-btn" onclick="document.getElementById('settings-modal').classList.add('hidden')">✕</button>
+        <h2>Configuración</h2>
+
+        <div style="margin-bottom: 12px;">
+          <h3 style="font-size: 1rem; margin-bottom: 10px; color: var(--text-main);">Tema de Colores</h3>
+          <div class="theme-swatches-grid">
+            <button class="theme-swatch swatch-multicolor" data-theme="multicolor" onclick="applyColorTheme('multicolor')" title="Arcoíris (Colores por categoría)">
+              <span class="swatch-preview">🎨</span>
+              <span class="swatch-name">Arcoíris</span>
+            </button>
+            <button class="theme-swatch swatch-purple" data-theme="purple" onclick="applyColorTheme('purple')" title="Morado Violeta">
+              <span class="swatch-dot" style="background: linear-gradient(135deg, #8B5CF6, #6D28D9);"></span>
+              <span class="swatch-name">Morado</span>
+            </button>
+            <button class="theme-swatch swatch-blue" data-theme="blue" onclick="applyColorTheme('blue')" title="Azul Océano">
+              <span class="swatch-dot" style="background: linear-gradient(135deg, #3B82F6, #1D4ED8);"></span>
+              <span class="swatch-name">Azul</span>
+            </button>
+            <button class="theme-swatch swatch-red" data-theme="red" onclick="applyColorTheme('red')" title="Rojo Carmesí">
+              <span class="swatch-dot" style="background: linear-gradient(135deg, #EF4444, #B91C1C);"></span>
+              <span class="swatch-name">Rojo</span>
+            </button>
+            <button class="theme-swatch swatch-green" data-theme="green" onclick="applyColorTheme('green')" title="Verde Esmeralda">
+              <span class="swatch-dot" style="background: linear-gradient(135deg, #10B981, #047857);"></span>
+              <span class="swatch-name">Verde</span>
+            </button>
+            <button class="theme-swatch swatch-orange" data-theme="orange" onclick="applyColorTheme('orange')" title="Naranja Atardecer">
+              <span class="swatch-dot" style="background: linear-gradient(135deg, #F97316, #C2410C);"></span>
+              <span class="swatch-name">Naranja</span>
+            </button>
+            <button class="theme-swatch swatch-rose" data-theme="rose" onclick="applyColorTheme('rose')" title="Rosa Fucsia">
+              <span class="swatch-dot" style="background: linear-gradient(135deg, #EC4899, #BE185D);"></span>
+              <span class="swatch-name">Rosa</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <span class="setting-label">Velocidad de habla</span>
+          <input type="range" id="setting-rate" class="range-slider" min="0.5" max="1.5" step="0.1" value="1.0">
+        </div>
+
+        <div class="setting-row">
+          <span class="setting-label">Tono de voz</span>
+          <input type="range" id="setting-pitch" class="range-slider" min="0.5" max="1.5" step="0.1" value="1.0">
+        </div>
+
+        <button class="btn btn-primary" style="margin-top: 16px; width: 100%;" onclick="saveSettings()">Guardar</button>
+      </div>
+    </div>
+
+    <!-- MODAL: iOS PWA INSTALLATION PROMPT (FADEMAC STYLE) -->
+    <div id="ios-install-modal" class="modal-overlay hidden">
+      <div class="modal-card ios-install-card">
+        <div class="ios-app-header">
+          <div class="ios-app-icon-lg">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
+          </div>
+          <h2 class="ios-app-title">Descarga la APP de Vozzy</h2>
+          <p class="ios-app-subtitle">Acceso rápido desde tu pantalla de inicio</p>
+        </div>
+
+        <div class="ios-steps-box">
+          <div class="ios-step-item">
+            <div class="ios-step-num">1</div>
+            <div>Toca el botón <strong>Compartir ⬆️</strong> en la barra inferior de Safari.</div>
+          </div>
+          <div class="ios-step-item">
+            <div class="ios-step-num">2</div>
+            <div>Desplázate y elige <strong>'Agregar a pantalla de inicio'</strong>.</div>
+          </div>
+          <div class="ios-step-item">
+            <div class="ios-step-num">3</div>
+            <div>Toca <strong>'Agregar'</strong> en la esquina superior derecha.</div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" style="margin-top: 20px; width: 100%;" onclick="closeIOSInstallModal()">Entendido</button>
+      </div>
+    </div>
+
+    <!-- ================================================================
+         MODAL: EMERGENCY REGISTRATION FORM
+         role=dialog + aria-modal para accesibilidad
+         ================================================================ -->
+    <div id="emergency-form-modal" class="modal-overlay hidden"
+         role="dialog" aria-modal="true" aria-labelledby="ef-modal-title">
+      <div class="modal-card ef-card">
+        <button class="modal-close-btn" onclick="closeEmergencyForm()" aria-label="Cerrar">&times;</button>
+        <h2 id="ef-modal-title">Registro de emergencia</h2>
+        <p class="ef-subtitle">Esta información se usa solo en situaciones de emergencia.<br>
+          <strong>Se guardan solo en este dispositivo.</strong></p>
+
+        <!-- Error message -->
+        <div id="ef-error-msg" class="ef-error" role="alert" aria-live="polite"></div>
+
+        <!-- Contact name (required) -->
+        <div class="form-group">
+          <label for="ef-contact-name" class="form-label">
+            Nombre del contacto de emergencia <span class="ef-required" aria-hidden="true">*</span>
+          </label>
+          <input type="text" id="ef-contact-name" class="form-input"
+                 placeholder="Ej. María García"
+                 autocomplete="name"
+                 required>
+        </div>
+
+        <!-- Contact phone (required) -->
+        <div class="form-group">
+          <label for="ef-contact-phone" class="form-label">
+            Teléfono del contacto <span class="ef-required" aria-hidden="true">*</span>
+          </label>
+          <input type="tel" id="ef-contact-phone" class="form-input"
+                 placeholder="Ej. +52 55 1234 5678"
+                 inputmode="tel"
+                 autocomplete="tel"
+                 required>
+        </div>
+
+        <!-- Relationship (optional) -->
+        <div class="form-group">
+          <label for="ef-relationship" class="form-label">Parentesco (opcional)</label>
+          <input type="text" id="ef-relationship" class="form-input"
+                 placeholder="Ej. Mamá, Papá, Tutor">
+        </div>
+
+        <!-- Blood type (optional) -->
+        <div class="form-group">
+          <label for="ef-blood-type" class="form-label">Tipo de sangre (opcional)</label>
+          <input type="text" id="ef-blood-type" class="form-input"
+                 placeholder="Ej. O+, A-, B+">
+        </div>
+
+        <!-- Allergies (optional) -->
+        <div class="form-group">
+          <label for="ef-allergies" class="form-label">Alergias, especialmente a medicamentos (opcional)</label>
+          <textarea id="ef-allergies" class="form-input ef-textarea"
+                    placeholder="Ej. Penicilina, maní..."></textarea>
+        </div>
+
+        <!-- Conditions (optional) -->
+        <div class="form-group">
+          <label for="ef-conditions" class="form-label">Enfermedades o discapacidad relevante (opcional)</label>
+          <textarea id="ef-conditions" class="form-input ef-textarea"
+                    placeholder="Ej. Epilepsia, parálisis cerebral..."></textarea>
+        </div>
+
+        <!-- Medications (optional) -->
+        <div class="form-group">
+          <label for="ef-medications" class="form-label">Medicamentos que toma (opcional)</label>
+          <textarea id="ef-medications" class="form-input ef-textarea"
+                    placeholder="Ej. Risperidona 1mg en la mañana..."></textarea>
+        </div>
+
+        <!-- How to communicate (optional) -->
+        <div class="form-group">
+          <label for="ef-how-to-communicate" class="form-label">Cómo comunicarse conmigo (opcional)</label>
+          <textarea id="ef-how-to-communicate" class="form-input ef-textarea"
+                    placeholder="No puedo hablar, uso Vozzy"></textarea>
+        </div>
+
+        <!-- Medical documents upload (optional) -->
+        <div class="form-group">
+          <label class="form-label">Historial médico – documentos (opcional)</label>
+          <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 8px;">
+            Sube imágenes o PDFs de recetas, diagnósticos o historial clínico. Se guardan solo en este dispositivo.
+          </p>
+          <div id="ef-upload-zone" class="ef-upload-zone" role="button" tabindex="0" aria-label="Subir archivo médico">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-accent);">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span class="ef-upload-text">Toca aquí o arrastra archivos</span>
+            <span class="ef-upload-hint">PDF, JPG, PNG — Máx. 2 MB por archivo</span>
+          </div>
+          <input type="file" id="ef-file-input" accept="image/*,.pdf" multiple style="display:none;">
+          <div id="ef-upload-gallery" class="ef-upload-gallery"></div>
+        </div>
+
+        <p class="ef-note"><span class="ef-required" aria-hidden="true">*</span> Campos obligatorios</p>
+
+        <!-- Aviso de almacenamiento local exclusivo -->
+        <div class="ef-local-warning" style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.82rem; color: var(--text-muted); background: var(--bg-secondary); border: 1.5px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 10px 12px; margin-top: 6px; line-height: 1.4;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--color-amber-main); flex-shrink: 0; margin-top: 1px;">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span><strong>Aviso importante:</strong> Los datos se guardan solo en este dispositivo y pueden perderse si se borran los datos del navegador o de la app.</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 8px;">
+          <button class="btn btn-primary" onclick="saveEmergencyForm()">Guardar datos</button>
+          <!-- Cerrar disponible siempre -->
+          <button class="btn btn-secondary" id="ef-close-btn"
+                  onclick="closeEmergencyForm()">
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================
+         MODAL: SOS PANEL
+         ================================================================ -->
+    <div id="sos-panel-modal" class="modal-overlay hidden"
+         role="dialog" aria-modal="true" aria-labelledby="sos-panel-title">
+      <div class="modal-card sos-panel-card">
+        <h2 id="sos-panel-title" class="sos-panel-title">Emergencia SOS</h2>
+        <p class="sos-panel-note">Vozzy no puede llamar ni enviar mensajes sin tu confirmacion.
+          Los enlaces abriran tu marcador o app de mensajes. Debes tocar Llamar o Enviar.</p>
+
+        <!-- 1. SMS con ubicación -->
+        <a id="sos-sms-contact" href="#" class="sos-action-btn" role="button">
+          <span class="sos-action-main">Avisar a mi contacto</span>
+          <span class="sos-action-sub">(SMS con mi ubicacion)</span>
+        </a>
+
+        <!-- 2. Llamada de voz al contacto -->
+        <a id="sos-call-contact" href="#" class="sos-action-btn">
+          <span class="sos-action-main">Llamar a mi contacto</span>
+          <span class="sos-action-sub">(llamada de voz)</span>
+        </a>
+
+        <!-- 3. Llamar al 911 — destacado (fondo negro sólido) -->
+        <a href="tel:911" class="sos-action-btn sos-action-911">
+          <span class="sos-action-main">Llamar al 911</span>
+          <span class="sos-action-sub">(emergencia critica)</span>
+        </a>
+
+        <!-- 4. Ficha médica -->
+        <button id="sos-med-card-btn" class="sos-action-btn sos-action-outline" onclick="openMedCard()">
+          <span class="sos-action-main">Mostrar mi ficha medica</span>
+          <span class="sos-action-sub">(tipo de sangre, alergias, condiciones)</span>
+        </button>
+
+        <!-- 5. Editar + Cerrar -->
+        <div style="display: flex; gap: 10px; margin-top: 6px;">
+          <button class="btn btn-secondary" style="flex:1" onclick="editFromSOSPanel()">Editar mis datos</button>
+          <button class="btn btn-secondary" style="flex:1" onclick="closeSOSPanel()">Cerrar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================
+         MODAL: FICHA MÉDICA
+         ================================================================ -->
+    <div id="med-card-modal" class="modal-overlay hidden"
+         role="dialog" aria-modal="true" aria-labelledby="med-card-title">
+      <div class="modal-card med-card">
+        <h2 id="med-card-title">Ficha médica</h2>
+        <div id="med-card-body" class="med-card-body"></div>
+        <div id="med-card-docs" class="med-card-docs-section"></div>
+        <button class="btn btn-primary" style="margin-top: 16px; width: 100%;" onclick="closeMedCard()">Cerrar</button>
+      </div>
+    </div>
+
+    <!-- ================================================================
+         MODAL: DOCUMENT VIEWER (full-screen preview of uploaded file)
+         ================================================================ -->
+    <div id="doc-viewer-modal" class="modal-overlay hidden"
+         role="dialog" aria-modal="true" aria-label="Visor de documento">
+      <div class="doc-viewer-container">
+        <div class="doc-viewer-toolbar">
+          <span id="doc-viewer-name" class="doc-viewer-name"></span>
+          <div class="doc-viewer-actions">
+            <a id="doc-viewer-download" class="doc-viewer-btn" download title="Descargar">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+            </a>
+            <button class="doc-viewer-btn" onclick="closeDocViewer()" title="Cerrar">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div id="doc-viewer-content" class="doc-viewer-content"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- App Script (debe ir primero) -->
+  <script src="./app.js"></script>
+  <!-- Emergency module (cargado después de app.js) -->
+  <script src="./emergency.js"></script>
+  <!-- Service Worker + Deep Links desde shortcuts PWA -->
+  <script>
+    // ── Manejo de parámetros URL (shortcuts del manifest) ──────
+    (function handleURLParams() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('sos') === '1') {
+        // Abrir panel SOS cuando se usa el shortcut
+        document.addEventListener('vozzy-app-ready', function onReady() {
+          document.removeEventListener('vozzy-app-ready', onReady);
+          if (typeof openSOSPanel === 'function') openSOSPanel();
+        });
+      }
+      if (params.get('view') === 'writer') {
+        document.addEventListener('vozzy-app-ready', function onReady() {
+          document.removeEventListener('vozzy-app-ready', onReady);
+          if (typeof navigateToCustomWriter === 'function') navigateToCustomWriter();
+        });
+      }
+    })();
+
+    // ── Registro del Service Worker ─────────────────────────────
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js')
+          .then(function (reg) {
+            console.log('[SW] Registrado con éxito:', reg.scope);
+
+            // Detectar nueva versión disponible
+            reg.addEventListener('updatefound', function () {
+              const newWorker = reg.installing;
+              if (!newWorker) return;
+              newWorker.addEventListener('statechange', function () {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  // Hay una nueva versión; notificar al SW que tome control
+                  newWorker.postMessage({ type: 'SKIP_WAITING' });
+                  console.log('[SW] Nueva versión instalada, actualizando...');
+                }
+              });
+            });
+          })
+          .catch(function (err) {
+            console.error('[SW] Fallo en registro:', err);
+          });
+
+        // Recargar si el SW toma el control (nueva versión activa)
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', function () {
+          if (!refreshing) {
+            refreshing = true;
+            window.location.reload();
+          }
+        });
+      });
+    }
+  </script>
+</body>
+</html>
