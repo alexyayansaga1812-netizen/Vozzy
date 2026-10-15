@@ -262,25 +262,89 @@ window.addEventListener('beforeinstallprompt', (e) => {
 
 // --- Web Speech API Setup ---
 let selectedVoice = null;
+let hasOfflineSpanishVoice = false;
+let offlineVoiceWarningDismissed = false;
+
+function showOfflineVoiceNotice() {
+  if (offlineVoiceWarningDismissed) return;
+  const existing = document.getElementById('vozzy-offline-voice-notice');
+  if (existing) return;
+
+  const notice = document.createElement('div');
+  notice.id = 'vozzy-offline-voice-notice';
+  notice.className = 'vozzy-voice-notice';
+  notice.setAttribute('role', 'alert');
+  notice.innerHTML = `
+    <div class="vozzy-voice-notice-inner">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span>No hay voz en español disponible sin conexión. Descarga una voz en español en los ajustes de voz de tu dispositivo para usar Vozzy sin internet.</span>
+      <button onclick="dismissOfflineVoiceNotice()" aria-label="Cerrar aviso">&times;</button>
+    </div>
+  `;
+  document.body.appendChild(notice);
+
+  setTimeout(() => {
+    dismissOfflineVoiceNotice();
+  }, 6000);
+}
+
+function dismissOfflineVoiceNotice() {
+  offlineVoiceWarningDismissed = true;
+  const notice = document.getElementById('vozzy-offline-voice-notice');
+  if (notice) {
+    notice.classList.add('fade-out');
+    setTimeout(() => notice.remove(), 300);
+  }
+}
 
 function loadSpanishVoices() {
+  if (!('speechSynthesis' in window)) return;
   const voices = window.speechSynthesis.getVoices();
+  // Manejo correcto de que getVoices() puede devolver array vacío al inicio
   if (!voices || voices.length === 0) return;
-  // Preferred priority: es-MX -> es-US -> es-ES -> any 'es'
-  selectedVoice = voices.find(v => v.lang === 'es-MX') ||
-                  voices.find(v => v.lang === 'es-US') ||
-                  voices.find(v => v.lang === 'es-ES') ||
-                  voices.find(v => v.lang.startsWith('es')) ||
-                  voices[0];
+
+  // Filtrar voces en español
+  const spanishVoices = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith('es'));
+
+  // Priorizar voces en español con localService === true (100% offline)
+  const localSpanishVoices = spanishVoices.filter(v => v.localService === true);
+
+  if (localSpanishVoices.length > 0) {
+    hasOfflineSpanishVoice = true;
+    selectedVoice = localSpanishVoices.find(v => v.lang === 'es-MX') ||
+                    localSpanishVoices.find(v => v.lang === 'es-US') ||
+                    localSpanishVoices.find(v => v.lang === 'es-ES') ||
+                    localSpanishVoices[0];
+  } else if (spanishVoices.length > 0) {
+    // Hay voces en español pero ninguna localService === true
+    hasOfflineSpanishVoice = false;
+    selectedVoice = spanishVoices.find(v => v.lang === 'es-MX') ||
+                    spanishVoices.find(v => v.lang === 'es-US') ||
+                    spanishVoices.find(v => v.lang === 'es-ES') ||
+                    spanishVoices[0];
+  } else {
+    // Sin voces en español disponibles
+    hasOfflineSpanishVoice = false;
+    selectedVoice = voices.find(v => v.default) || voices[0];
+  }
 }
 
 if ('speechSynthesis' in window) {
   window.speechSynthesis.onvoiceschanged = loadSpanishVoices;
+  window.speechSynthesis.addEventListener('voiceschanged', loadSpanishVoices);
   loadSpanishVoices();
 }
 
 function speakText(text, cardEl = null) {
   if (!text || !('speechSynthesis' in window)) return;
+
+  if (!hasOfflineSpanishVoice && !offlineVoiceWarningDismissed) {
+    showOfflineVoiceNotice();
+  }
 
   window.speechSynthesis.cancel(); // Stop any active speech
 
@@ -719,11 +783,11 @@ function setupPWAInstall() {
     installNavBtn.classList.remove('hidden');
   }
 
-  // iOS Safari Installation Detection
+  // Requisito 5: Solo mostrar si el dispositivo es iOS y NO está en modo standalone
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
   const iosModalDismissed = localStorage.getItem('vozzy_ios_modal_dismissed') === 'true';
 
-  if (isIOS && !iosModalDismissed) {
+  if (isIOS && !isStandalone && !iosModalDismissed) {
     setTimeout(() => {
       openInstallModal();
     }, 1500);
@@ -731,6 +795,8 @@ function setupPWAInstall() {
 }
 
 function triggerAndroidInstall() {
+  if (isAppStandalone()) return;
+
   if (state.deferredInstallPrompt) {
     state.deferredInstallPrompt.prompt();
     state.deferredInstallPrompt.userChoice.then((choiceResult) => {
@@ -742,56 +808,47 @@ function triggerAndroidInstall() {
       state.deferredInstallPrompt = null;
     });
   } else {
-    // Fallback: show instructions modal when native prompt is not available
-    openInstallModal();
+    // Solo en iOS se muestra el modal explicativo de Safari; en Android y APK no aparece
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    if (isIOS) {
+      openInstallModal();
+    }
   }
 }
 
 function openInstallModal() {
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = isAppStandalone();
+
+  // Requisito 5: Solo se muestra si el dispositivo es iOS y la app NO está ya en modo standalone.
+  // En Android y dentro del APK no debe aparecer.
+  if (!isIOS || isStandalone) return;
+
   const modal = document.getElementById('ios-install-modal');
   if (!modal) return;
 
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
   const titleEl = modal.querySelector('.ios-app-title');
   const subtitleEl = modal.querySelector('.ios-app-subtitle');
   const stepsBox = modal.querySelector('.ios-steps-box');
 
+  if (titleEl) titleEl.textContent = 'Descarga la APP de Vozzy';
+  if (subtitleEl) subtitleEl.textContent = 'Instala Vozzy en tu iPhone o iPad en 3 simples pasos';
+
   if (stepsBox) {
-    if (isIOS) {
-      if (titleEl) titleEl.textContent = 'Instalar Vozzy en iOS';
-      if (subtitleEl) subtitleEl.textContent = 'Acceso rápido desde tu pantalla de inicio';
-      stepsBox.innerHTML = `
-        <div class="ios-step-item">
-          <div class="ios-step-num">1</div>
-          <div>Toca el botón <strong>Compartir ⬆️</strong> en la barra inferior de Safari.</div>
-        </div>
-        <div class="ios-step-item">
-          <div class="ios-step-num">2</div>
-          <div>Desplázate y elige <strong>'Agregar a pantalla de inicio'</strong>.</div>
-        </div>
-        <div class="ios-step-item">
-          <div class="ios-step-num">3</div>
-          <div>Toca <strong>'Agregar'</strong> en la esquina superior derecha.</div>
-        </div>
-      `;
-    } else {
-      if (titleEl) titleEl.textContent = 'Instalar Vozzy en tu dispositivo';
-      if (subtitleEl) subtitleEl.textContent = 'Añade Vozzy a tu pantalla de inicio para acceso rápido u offline';
-      stepsBox.innerHTML = `
-        <div class="ios-step-item">
-          <div class="ios-step-num">1</div>
-          <div>Abre el menú del navegador (los <strong>tres puntos ⁝</strong> en la esquina superior derecha).</div>
-        </div>
-        <div class="ios-step-item">
-          <div class="ios-step-num">2</div>
-          <div>Selecciona <strong>'Instalar aplicación'</strong> o <strong>'Agregar a la pantalla principal'</strong>.</div>
-        </div>
-        <div class="ios-step-item">
-          <div class="ios-step-num">3</div>
-          <div>Presiona <strong>'Instalar'</strong> para completar la instalación.</div>
-        </div>
-      `;
-    }
+    stepsBox.innerHTML = `
+      <div class="ios-step-item">
+        <div class="ios-step-num">1</div>
+        <div>Toca el botón <strong>Compartir ⬆️</strong> en la barra inferior de Safari.</div>
+      </div>
+      <div class="ios-step-item">
+        <div class="ios-step-num">2</div>
+        <div>Desplázate y elige <strong>'Agregar a pantalla de inicio'</strong>.</div>
+      </div>
+      <div class="ios-step-item">
+        <div class="ios-step-num">3</div>
+        <div>Toca <strong>'Agregar'</strong> en la esquina superior derecha.</div>
+      </div>
+    `;
   }
 
   modal.classList.remove('hidden');
@@ -821,12 +878,7 @@ window.addEventListener('DOMContentLoaded', () => {
   // Render home screen
   renderHomeScreen();
 
-  // Service Worker Registration
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js')
-      .then(reg => console.log('[SW] Registered successfully', reg.scope))
-      .catch(err => console.error('[SW] Registration failed', err));
-  }
+  // Service Worker Registration se gestiona en index.html al evento load
 
   // PWA logic
   setupPWAInstall();

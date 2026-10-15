@@ -2,7 +2,41 @@
    VOZZY - CAA Modern Vibrant Color Design System
    ========================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./fonts/inter-400.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('./fonts/inter-500.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('./fonts/inter-600.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./fonts/inter-700.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('./fonts/inter-800.ttf') format('truetype');
+}
 
 :root {
   /* Light Theme (Default) */
@@ -1942,4 +1976,57 @@ img.ef-doc-thumb {
   white-space: nowrap;
   text-align: center;
   margin-top: 3px;
+}
+
+/* ==========================================================================
+   OFFLINE VOICE WARNING BANNER (Tarea 6)
+   ========================================================================== */
+.vozzy-voice-notice {
+  position: fixed;
+  bottom: 84px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 150;
+  width: calc(100% - 32px);
+  max-width: 480px;
+  background: var(--bg-card);
+  color: var(--text-main);
+  border: 1.5px solid var(--color-amber-main);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  animation: slide-up 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.vozzy-voice-notice.fade-out {
+  opacity: 0;
+  transform: translate(-50%, 15px);
+}
+
+.vozzy-voice-notice-inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.vozzy-voice-notice-inner svg {
+  color: var(--color-amber-main);
+  flex-shrink: 0;
+}
+
+.vozzy-voice-notice-inner span {
+  flex: 1;
+}
+
+.vozzy-voice-notice-inner button {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
 }

@@ -39,3 +39,8 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Capacitor native project (generated, do not commit)
+/capacitor-app/android/
+/capacitor-app/ios/
+/capacitor-app/node_modules/

@@ -1,68 +1,124 @@
-const CACHE_NAME = 'vozzy-v2.0.0';
-const ASSETS_TO_CACHE = [
-  './',
-  './index.html',
-  './style.css',
-  './app.js',
-  './emergency.js',
-  './manifest.json',
-  './icons/icon.svg',
-  './icons/favicon.png',
-  './icons/apple-touch-icon.png',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/icon-maskable-512.png'
+/* ============================================================
+   VOZZY Service Worker  –  v5 (Full Offline Edition)
+   Strategy:
+     - Core assets: Cache-First  (app siempre corre offline)
+     - Stale-While-Revalidate: devuelve caché instantáneo y
+       actualiza en segundo plano cuando hay red
+     - Fetch fallback: devuelve index.html para rutas SPA
+   ============================================================ */
+
+const CACHE_NAME = 'vozzy-v5';
+
+// Todos los archivos que la app necesita para funcionar sin red
+const CORE_ASSETS = [
+  '/',
+  '/index.html',
+  '/style.css',
+  '/app.js',
+  '/emergency.js',
+  '/manifest.json',
+  '/sw.js',
+  '/fonts/inter-400.ttf',
+  '/fonts/inter-500.ttf',
+  '/fonts/inter-600.ttf',
+  '/fonts/inter-700.ttf',
+  '/fonts/inter-800.ttf',
+  '/icons/favicon.png',
+  '/icons/apple-touch-icon.png',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
+  '/icons/icon-maskable-512.png'
 ];
 
-// Install Event
+// ── INSTALL: Pre-cachea todos los core assets (resiliente) ─────
 self.addEventListener('install', (event) => {
+  console.log('[SW] Installing Vozzy v5...');
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[ServiceWorker] Caching app shell & assets');
-      return cache.addAll(ASSETS_TO_CACHE);
+    caches.open(CACHE_NAME).then(async (cache) => {
+      // Usamos allSettled para que un recurso faltante no rompa la instalación
+      const results = await Promise.allSettled(
+        CORE_ASSETS.map((url) =>
+          cache.add(url).catch((err) => {
+            console.warn(`[SW] No se pudo cachear ${url}:`, err.message);
+          })
+        )
+      );
+      const ok = results.filter(r => r.status === 'fulfilled').length;
+      console.log(`[SW] Cached ${ok}/${CORE_ASSETS.length} assets.`);
     }).then(() => self.skipWaiting())
   );
 });
 
-// Activate Event
+// ── ACTIVATE: Limpia cachés antiguas ──────────────────────────
 self.addEventListener('activate', (event) => {
+  console.log('[SW] Activating Vozzy v5...');
   event.waitUntil(
-    caches.keys().then((keyList) => {
-      return Promise.all(keyList.map((key) => {
-        if (key !== CACHE_NAME) {
-          console.log('[ServiceWorker] Removing old cache', key);
-          return caches.delete(key);
-        }
-      }));
-    }).then(() => self.clients.claim())
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys
+          .filter((key) => key !== CACHE_NAME)
+          .map((key) => {
+            console.log('[SW] Eliminando caché antigua:', key);
+            return caches.delete(key);
+          })
+      )
+    ).then(() => {
+      console.log('[SW] Vozzy v5 activo y controlando clientes.');
+      return self.clients.claim();
+    })
   );
 });
 
-// Fetch Event (Cache First with Network Fallback)
+// ── FETCH: Cache-First con Stale-While-Revalidate ─────────────
 self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return;
+  const { request } = event;
+
+  // Solo procesar GET
+  if (request.method !== 'GET') return;
+
+  // Ignorar URLs externas (analytics, CDNs, etc.)
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
 
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        // Fetch background update for cache freshness
-        fetch(event.request).then((networkResponse) => {
+    caches.match(request).then(async (cachedResponse) => {
+      // Actualización en segundo plano (Stale-While-Revalidate)
+      const revalidatePromise = fetch(request)
+        .then(async (networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse));
+            const cache = await caches.open(CACHE_NAME);
+            cache.put(request, networkResponse.clone());
           }
-        }).catch(() => {/* Offline fallback */});
+          return networkResponse;
+        })
+        .catch(() => null); // sin red → ignorar
+
+      if (cachedResponse) {
+        // Devolver desde caché inmediatamente
+        event.waitUntil(revalidatePromise);
         return cachedResponse;
       }
-      return fetch(event.request).then((networkResponse) => {
-        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
-          return networkResponse;
-        }
-        const responseToCache = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
-        return networkResponse;
+
+      // No hay caché → intentar red
+      const networkResponse = await revalidatePromise;
+      if (networkResponse) return networkResponse;
+
+      // Sin red y sin caché → fallback a index.html (shell offline)
+      const fallback = await caches.match('/index.html') || await caches.match('/');
+      if (fallback) return fallback;
+
+      // Último recurso
+      return new Response('Vozzy está offline. Instala la app para usarla sin conexión.', {
+        status: 503,
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' }
       });
     })
   );
+});
+
+// ── Mensaje SKIP_WAITING para forzar actualización ────────────
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });

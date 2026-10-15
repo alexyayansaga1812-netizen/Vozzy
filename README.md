@@ -6,35 +6,118 @@
 
 ## ✨ Características principales
 
-- 🗣️ **Síntesis de voz instantánea (TTS):** Reproduce frases organizadas por categorías cotidianas (Casa, Escuela, Doctor, Comida, Emociones, Saludos, Transporte, etc.) con selección de voz, velocidad y tono personalizables.
-- ✍️ **Redactor de mensajes libres:** Área de texto con frases rápidas ("Sí", "No", "Gracias", etc.) y lectura en voz alta.
-- 🚨 **Módulo de Emergencia SOS:**
-  - Acceso directo a llamadas al 911 y a contactos de emergencia.
-  - Envío de SMS de socorro con geolocalización GPS integrada.
-  - **Ficha médica digital:** Almacenamiento seguro en el dispositivo de tipo de sangre, alergias, condiciones y medicamentos.
-  - **Subida de historial médico:** Soporte para adjuntar imágenes y documentos PDF de recetas y diagnósticos con visor a pantalla completa.
-- 🎨 **Diseño adaptativo y temas vibrantes:**
-  - Selector de temas de color (Morado, Azul, Rojo, Verde, Naranja, Rosa, etc.).
-  - Modo claro y modo oscuro de alto contraste.
-  - Animaciones fluidas optimizadas para dispositivos móviles y de escritorio.
-- 📱 **PWA instalable y funcionamiento offline:**
-  - Service Worker con caché de recursos esenciales.
-  - Instalable en Android, iOS, Windows y macOS.
+- 🗣️ **Síntesis de voz instantánea (TTS):** Reproduce frases organizadas por categorías cotidianas con selección de voz, velocidad y tono personalizables.
+- ✍️ **Redactor de mensajes libres:** Área de texto con frases rápidas y lectura en voz alta.
+- 🚨 **Módulo de Emergencia SOS:** Llamadas al 911, SMS con GPS, ficha médica digital.
+- 🎨 **Diseño adaptativo:** Temas de color, modo oscuro, animaciones fluidas.
+- 📴 **100% Offline:** Funciona sin internet una vez instalada.
 
 ---
 
-## 🚀 Despliegue en Vercel
+## 📴 Funcionamiento Offline (PWA)
 
-Vozzy es una aplicación web estática (HTML, CSS y JavaScript Vanilla). Para desplegarla en Vercel:
+La app usa un **Service Worker v5** con estrategia **Cache-First + Stale-While-Revalidate**:
+
+- Todos los assets (HTML, CSS, JS, fuentes, íconos) se cachean en la primera visita.
+- A partir de entonces, la app carga instantáneamente aunque no haya red.
+- Si hay conexión, los archivos se actualizan en segundo plano automáticamente.
+- Las fuentes Inter se cargan **localmente** desde `/fonts/` (sin Google Fonts).
+
+---
+
+## 📱 Cómo instalar Vozzy (sin conexión permanente)
+
+### Android — Instalar como PWA (recomendado)
+1. Abre Chrome y visita la URL de Vozzy.
+2. Toca el menú ⋮ → **"Agregar a pantalla de inicio"** o **"Instalar app"**.
+3. La app aparece en tu lanzador como una app nativa.
+
+### Android — Instalar como APK nativo
+Ver sección **"Generar APK Android"** más abajo.
+
+### iOS / iPhone / iPad — Instalar como PWA
+1. Abre **Safari** (obligatorio — Chrome no soporta instalación PWA en iOS).
+2. Toca el botón **Compartir ⬆️** en la barra inferior.
+3. Selecciona **"Agregar a pantalla de inicio"**.
+4. Toca **"Agregar"** en la esquina superior derecha.
+5. Vozzy aparece en tu pantalla de inicio como app nativa.
+
+### Windows / macOS — Instalar como PWA
+1. Abre Chrome/Edge y visita la URL de Vozzy.
+2. Haz clic en el ícono de instalación en la barra de dirección.
+3. La app se instala como aplicación de escritorio con ícono propio.
+
+---
+
+## 📲 Atajos de pantalla de inicio (Android)
+
+Al mantener presionado el ícono de Vozzy en Android, aparecen atajos rápidos:
+- **🚨 Emergencia SOS** — Abre directamente el panel de emergencias
+- **✍️ Escribir mensaje** — Abre el redactor libre de texto
+
+---
+
+## 🔨 Generar APK Android (Capacitor)
+
+### Requisitos previos
+- [Node.js](https://nodejs.org) v18+
+- [Android Studio](https://developer.android.com/studio) con SDK Android 14+
+- JDK 17+
+
+### Pasos rápidos (script automático)
+```
+Doble clic en Build_Android_APK.bat
+```
+
+### Pasos manuales
+```bash
+cd capacitor-app
+npm install
+npx cap add android        # primera vez
+npx cap sync android       # sincroniza assets web
+npx cap open android       # abre Android Studio
+# En Android Studio: Build → Build APK(s)
+```
+
+El APK de debug estará en:
+`capacitor-app/android/app/build/outputs/apk/debug/app-debug.apk`
+
+### APK firmado (para publicar en Play Store)
+En Android Studio: **Build → Generate Signed Bundle / APK**
+
+---
+
+## 🍎 Generar IPA iOS (Capacitor)
+
+> Requiere una Mac con Xcode 15+ y una cuenta de desarrollador Apple.
+
+```bash
+cd capacitor-app
+npm install
+npx cap add ios            # primera vez
+npx cap sync ios           # sincroniza assets web
+npx cap open ios           # abre Xcode
+# En Xcode: Product → Archive → Distribute App
+```
+
+---
+
+## 🚀 Despliegue en Vercel (PWA web)
+
 1. Conecta tu repositorio de GitHub en Vercel.
-2. En **Framework Preset**, selecciona **Other** (o déjalo en blanco / static).
-3. En **Build Command**, déjalo vacío o introduce `echo "Static build ready"`.
-4. En **Output Directory**, déjalo en `./` o raíz.
+2. **Framework Preset**: `Other` (sin framework).
+3. **Build Command**: dejar vacío.
+4. **Output Directory**: `./` (raíz).
 
 ---
 
 ## 🛠️ Tecnologías
 
-- **Frontend:** HTML5 semántico, CSS3 moderno (Custom Properties, CSS Grid, Flexbox), JavaScript (ES6+).
-- **APIs Web:** Web Speech API (`SpeechSynthesis`), Geolocation API, Service Worker API, Cache API, LocalStorage.
-- **PWA:** Web App Manifest v3.
+| Capa | Tecnología |
+|------|-----------|
+| Frontend | HTML5, CSS3, JavaScript ES6+ (Vanilla) |
+| Offline | Service Worker v5, Cache API (Cache-First) |
+| Instalable | Web App Manifest v3 + Capacitor 6 |
+| APIs | Web Speech API, Geolocation API, LocalStorage |
+| Fuentes | Inter (local, sin CDN, 100% offline) |
+| APK nativo | Capacitor 6 (Android + iOS) |

@@ -360,22 +360,22 @@ function openEmergencyForm(onSaveCallback) {
   // Limpiar errores previos
   document.getElementById('ef-error-msg').textContent = '';
 
-  // Ocultar botón Cancelar si es primer registro (no hay datos previos)
+  // Botón Cancelar siempre visible
   const cancelBtn = document.getElementById('ef-close-btn');
   if (cancelBtn) {
-    cancelBtn.style.display = getEmergencyData() ? '' : 'none';
+    cancelBtn.style.display = '';
   }
 
   modal.classList.remove('hidden');
   emFocusModal('emergency-form-modal');
 
-  // Listener Escape — solo cierra si ya hay datos (no primer uso)
+  // Listener Escape — siempre cierra el formulario
   _efEscHandler = emAddEscListener(() => {
-    if (getEmergencyData()) closeEmergencyForm();
+    closeEmergencyForm();
   });
 }
 
-/** Cierra el formulario sin guardar (solo si ya existen datos previos). */
+/** Cierra el formulario sin guardar. */
 function closeEmergencyForm() {
   const modal = document.getElementById('emergency-form-modal');
   if (!modal) return;
@@ -384,7 +384,11 @@ function closeEmergencyForm() {
     _efEscHandler = null;
   }
   modal.classList.add('hidden');
+  const cb = _efOnSaveCallback;
   _efOnSaveCallback = null;
+  if (typeof cb === 'function') {
+    cb(null);
+  }
 }
 
 /**
@@ -435,6 +439,7 @@ function saveEmergencyForm() {
 
   // Guardar callback local antes de cerrarlo
   const cb = _efOnSaveCallback;
+  _efOnSaveCallback = null;
   closeEmergencyForm();
 
   // Disparar evento personalizado (útil para extensibilidad futura)
@@ -484,23 +489,24 @@ let _sosEscHandler = null;
 
 /**
  * Abre el panel SOS.
- * Si no hay datos de emergencia registrados, abre primero el formulario.
+ * El panel SOS se abre SIEMPRE, con o sin datos guardados.
  */
 function openSOSPanel() {
   const data = getEmergencyData();
-  if (!data) {
-    // Sin datos: pedir registro y reabrir panel al guardar
-    openEmergencyForm(() => openSOSPanel());
-    return;
-  }
 
-  // Actualizar enlaces dinámicos (tel: y sms:)
+  // Actualizar enlaces dinámicos (tel: y sms:), soporta data null o incompleto
   _renderSOSPanel(data);
 
   const panel = document.getElementById('sos-panel-modal');
-  panel.classList.remove('hidden');
-  emFocusModal('sos-panel-modal');
+  if (panel) {
+    panel.classList.remove('hidden');
+    emFocusModal('sos-panel-modal');
+  }
 
+  if (_sosEscHandler) {
+    document.removeEventListener('keydown', _sosEscHandler);
+    _sosEscHandler = null;
+  }
   _sosEscHandler = emAddEscListener(closeSOSPanel);
 }
 
@@ -518,26 +524,79 @@ function closeSOSPanel() {
 
 /**
  * Actualiza los href y listeners del panel SOS con los datos guardados.
- * @param {object} data - Objeto de datos de emergencia.
+ * Funciona con data null o incompleto sin lanzar errores.
+ * @param {object|null} data - Objeto de datos de emergencia.
  */
 function _renderSOSPanel(data) {
-  const phoneClean = cleanPhone(data.contactPhone);
+  const phoneClean = data?.contactPhone ? cleanPhone(data.contactPhone) : '';
+  const hasValidPhone = Boolean(phoneClean && phoneClean.replace(/\D/g, '').length >= 3);
 
-  // Botón de llamada de voz
-  const callBtn = document.getElementById('sos-call-contact');
-  if (callBtn) callBtn.href = `tel:${phoneClean}`;
+  // 1. Botón de llamada al 911 — siempre visible y activo
+  const btn911 = document.querySelector('.sos-action-911');
+  if (btn911) {
+    btn911.href = 'tel:911';
+    btn911.classList.remove('hidden');
+  }
 
-  // Botón SMS — usa un click handler para esperar geolocalización.
-  // Clonar el nodo elimina cualquier listener anterior acumulado.
+  // 2. Botón de llamada de voz
+  const callBtnOld = document.getElementById('sos-call-contact');
+  if (callBtnOld) {
+    const callBtnNew = callBtnOld.cloneNode(true);
+    callBtnOld.parentNode.replaceChild(callBtnNew, callBtnOld);
+
+    const subEl = callBtnNew.querySelector('.sos-action-sub');
+    if (hasValidPhone) {
+      callBtnNew.href = `tel:${phoneClean}`;
+      if (subEl) {
+        subEl.textContent = data?.contactName ? `(llamada a ${data.contactName}: ${phoneClean})` : `(${phoneClean})`;
+      }
+    } else {
+      callBtnNew.href = '#';
+      if (subEl) subEl.textContent = '(Sin contacto registrado)';
+      callBtnNew.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeSOSPanel();
+        openEmergencyForm(() => openSOSPanel());
+      });
+    }
+  }
+
+  // 3. Botón SMS — usa un click handler para esperar geolocalización
   const smsBtnOld = document.getElementById('sos-sms-contact');
   if (smsBtnOld) {
     const smsBtnNew = smsBtnOld.cloneNode(true);
     smsBtnOld.parentNode.replaceChild(smsBtnNew, smsBtnOld);
 
-    smsBtnNew.addEventListener('click', (e) => {
-      e.preventDefault();
-      _buildAndSendSMS(data);
-    });
+    const smsSubEl = smsBtnNew.querySelector('.sos-action-sub');
+    if (hasValidPhone) {
+      smsBtnNew.href = '#';
+      if (smsSubEl) {
+        smsSubEl.textContent = data?.contactName ? `(SMS a ${data.contactName})` : '(SMS con mi ubicación)';
+      }
+      smsBtnNew.addEventListener('click', (e) => {
+        e.preventDefault();
+        _buildAndSendSMS(data);
+      });
+    } else {
+      smsBtnNew.href = '#';
+      if (smsSubEl) smsSubEl.textContent = '(Sin contacto registrado)';
+      smsBtnNew.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeSOSPanel();
+        openEmergencyForm(() => openSOSPanel());
+      });
+    }
+  }
+
+  // 4. Botón de ficha médica — conserva SOLO el onclick="openMedCard()" del HTML
+  const medBtn = document.getElementById('sos-med-card-btn');
+  if (medBtn) {
+    const medSubEl = medBtn.querySelector('.sos-action-sub');
+    if (medSubEl) {
+      medSubEl.textContent = !data
+        ? '(Sin ficha registrada)'
+        : '(tipo de sangre, alergias, condiciones)';
+    }
   }
 }
 
@@ -598,7 +657,7 @@ function _buildAndSendSMS(data) {
 /** Abre el formulario de edición desde dentro del panel SOS. */
 function editFromSOSPanel() {
   closeSOSPanel();
-  openEmergencyForm(null); // Sin callback; la home ya está lista
+  openEmergencyForm(() => openSOSPanel());
 }
 
 /* -----------------------------------------------------------------------
@@ -614,7 +673,13 @@ let _medEscHandler = null;
  */
 function openMedCard() {
   const data = getEmergencyData();
-  if (!data) return;
+  if (!data) {
+    if (confirm('No tienes una ficha médica registrada. ¿Deseas registrarla ahora?')) {
+      closeSOSPanel();
+      openEmergencyForm(() => openSOSPanel());
+    }
+    return;
+  }
 
   const card = document.getElementById('med-card-modal');
   if (!card) return;
