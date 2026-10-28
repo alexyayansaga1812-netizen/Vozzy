@@ -612,7 +612,7 @@ function _renderSOSPanel(data) {
  */
 function _buildAndSendSMS(data) {
   const phoneClean = cleanPhone(data.contactPhone);
-  const userName   = localStorage.getItem('vozzy_username') || 'alguien';
+  const userName   = localStorage.getItem('tlahto_username') || localStorage.getItem('vozzy_username') || 'alguien';
   const baseMsg    = `EMERGENCIA: ${userName} necesita ayuda urgente y no puede hablar. Por favor llámame o ven por mí.`;
 
   function navigateSMS(locationStr) {
@@ -819,7 +819,9 @@ document.addEventListener('vozzy-app-ready', () => {
       state.userName    = name;
       state.welcomeDone = true;
     }
+    localStorage.setItem('tlahto_username', name);
     localStorage.setItem('vozzy_username', name);
+    localStorage.setItem('tlahto_welcome_done', 'true');
     localStorage.setItem('vozzy_welcome_done', 'true');
 
     // Cerrar bienvenida
@@ -837,8 +839,8 @@ document.addEventListener('vozzy-app-ready', () => {
        app.js ya NO llama a checkWelcomeFlow (lo eliminamos).
        Lo hacemos aquí, usando la lógica ampliada que incluye emergencias.
   --- */
-  const welcomeDone  = localStorage.getItem('vozzy_welcome_done') === 'true';
-  const tutorialDone = localStorage.getItem('vozzy_tutorial_done') === 'true';
+  const welcomeDone  = (localStorage.getItem('tlahto_welcome_done') || localStorage.getItem('vozzy_welcome_done')) === 'true';
+  const tutorialDone = (localStorage.getItem('tlahto_tutorial_done') || localStorage.getItem('vozzy_tutorial_done')) === 'true';
 
   if (!welcomeDone) {
     // Primer uso: mostrar pantalla de bienvenida.

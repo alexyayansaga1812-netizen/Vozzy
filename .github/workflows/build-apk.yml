@@ -1,4 +1,4 @@
-name: Generar APK de Android (Vozzy)
+name: Generar APK de Android (Tlahto)
 
 on:
   push:
@@ -35,6 +35,23 @@ jobs:
           npx cap add android || true
           npx cap sync android
 
+      - name: Declarar queries de TTS en AndroidManifest
+        run: |
+          python3 -c "
+          manifest_path = 'capacitor-app/android/app/src/main/AndroidManifest.xml'
+          with open(manifest_path, 'r', encoding='utf-8') as f:
+              content = f.read()
+
+          if 'TTS_SERVICE' not in content:
+              queries_tag = '<queries><intent><action android:name=\"android.intent.action.TTS_SERVICE\" /></intent></queries>\n</manifest>'
+              new_content = content.replace('</manifest>', queries_tag)
+              with open(manifest_path, 'w', encoding='utf-8') as f:
+                  f.write(new_content)
+              print('Bloque TTS_SERVICE inyectado con exito en AndroidManifest.xml')
+          else:
+              print('TTS_SERVICE ya declarado en AndroidManifest.xml')
+          "
+
       - name: Dar permisos de ejecucion a Gradlew
         run: |
           cd capacitor-app/android
@@ -48,5 +65,5 @@ jobs:
       - name: Subir APK como artefacto de descarga
         uses: actions/upload-artifact@v4
         with:
-          name: Vozzy-Android-APK
+          name: Tlahto-Android-APK
           path: capacitor-app/android/app/build/outputs/apk/debug/app-debug.apk

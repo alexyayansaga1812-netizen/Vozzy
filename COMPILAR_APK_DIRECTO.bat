@@ -1,9 +1,9 @@
 @echo off
-title Vozzy - Compilar APK Android
+title Tlahto - Compilar APK Android
 cd /d "%~dp0capacitor-app\android"
 
 echo ======================================================
-echo           COMPILANDO APK ANDROID DE VOZZY
+echo           COMPILANDO APK ANDROID DE TLAHTO
 echo ======================================================
 echo.
 

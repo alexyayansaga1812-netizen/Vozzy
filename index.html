@@ -4,26 +4,25 @@
   <meta charset="UTF-8">
   <!-- viewport seguro para dispositivos con notch / Dynamic Island -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Vozzy - Tu voz, en un toque</title>
+  <title>Tlahto - Tu voz, en un toque</title>
 
   <!-- SEO -->
-  <meta name="description" content="Vozzy es una herramienta de comunicación aumentativa y alternativa (CAA) para personas mudas o con dificultades del habla. Funciona 100% offline.">
+  <meta name="description" content="Tlahto es una herramienta de comunicación aumentativa y alternativa (CAA) para personas mudas o con dificultades del habla. Funciona 100% offline.">
   <meta name="keywords" content="CAA, AAC, comunicación aumentativa, alternativa, mudos, habla, offline, accesibilidad">
   <meta name="robots" content="index, follow">
 
   <!-- PWA Theme -->
-  <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#4c1d95" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#C41C3B">
 
   <!-- iOS / Safari PWA (Add to Home Screen) -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Vozzy">
+  <meta name="apple-mobile-web-app-title" content="Tlahto">
   <meta name="format-detection" content="telephone=no">
 
   <!-- Android Chrome -->
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="application-name" content="Vozzy">
+  <meta name="application-name" content="Tlahto">
 
   <!-- Favicons & App Icons -->
   <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon.png">
@@ -48,9 +47,11 @@
     <!-- Top Header Bar -->
     <header class="header">
       <div class="logo-group" onclick="navigateToHome()">
-        <div class="logo-badge" id="logo-icon-container"></div>
+        <div class="logo-badge" id="logo-icon-container">
+          <img src="./icons/icon-192.png" alt="Tlahto Logo" class="brand-logo-img">
+        </div>
         <div>
-          <h1 class="brand-title">Vozzy</h1>
+          <h1 class="brand-title">Tlahto</h1>
           <div class="user-greeting-pill" id="user-greeting-name">Hola</div>
         </div>
       </div>
@@ -59,7 +60,6 @@
         <!-- SOS button: always visible, opens emergency panel -->
         <button id="sos-header-btn" class="sos-pill-btn" aria-label="Emergencia SOS">SOS</button>
         <button id="nav-install-btn" class="install-nav-btn hidden" title="Instalar aplicación" aria-label="Instalar aplicación" onclick="triggerAndroidInstall()"></button>
-        <button id="theme-toggle-btn" class="btn-icon" title="Cambiar tema" aria-label="Cambiar tema" onclick="toggleTheme()"></button>
         <button id="settings-toggle-btn" class="btn-icon" title="Configuración de voz" aria-label="Configuración de voz" onclick="openSettingsModal()"></button>
         <button id="profile-toggle-btn" class="btn-icon" title="Perfil de usuario" aria-label="Perfil de usuario" onclick="openProfileModal()"></button>
       </div>
@@ -147,10 +147,10 @@
     <!-- MODAL: WELCOME SCREEN -->
     <div id="welcome-modal" class="modal-overlay hidden">
       <div class="modal-card" style="text-align: center;">
-        <div class="ios-app-icon-lg" style="margin: 0 auto;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
+        <div class="ios-app-icon-lg" style="margin: 0 auto; overflow: hidden; background: transparent; box-shadow: none;">
+          <img src="./icons/icon-192.png" alt="Tlahto Logo" class="modal-app-logo">
         </div>
-        <h2 style="font-size: 1.6rem;">Bienvenido a Vozzy</h2>
+        <h2 style="font-size: 1.6rem; margin-top: 12px;">Bienvenido a Tlahto</h2>
         <p style="color: var(--text-muted); font-size: 1rem;">Tu voz, en un toque. Diseñada para expresarte de forma libre, clara y rápida.</p>
 
         <div class="form-group" style="margin-top: 12px;">
@@ -201,47 +201,13 @@
       </div>
     </div>
 
-    <!-- MODAL: SETTINGS (VOICE SPEED & PITCH & COLORS) -->
+    <!-- MODAL: SETTINGS (VOICE SPEED & PITCH) -->
     <div id="settings-modal" class="modal-overlay hidden">
       <div class="modal-card">
         <button class="modal-close-btn" onclick="document.getElementById('settings-modal').classList.add('hidden')">✕</button>
-        <h2>Configuración</h2>
+        <h2>Configuración de Voz</h2>
 
-        <div style="margin-bottom: 12px;">
-          <h3 style="font-size: 1rem; margin-bottom: 10px; color: var(--text-main);">Tema de Colores</h3>
-          <div class="theme-swatches-grid">
-            <button class="theme-swatch swatch-multicolor" data-theme="multicolor" onclick="applyColorTheme('multicolor')" title="Arcoíris (Colores por categoría)">
-              <span class="swatch-preview">🎨</span>
-              <span class="swatch-name">Arcoíris</span>
-            </button>
-            <button class="theme-swatch swatch-purple" data-theme="purple" onclick="applyColorTheme('purple')" title="Morado Violeta">
-              <span class="swatch-dot" style="background: linear-gradient(135deg, #8B5CF6, #6D28D9);"></span>
-              <span class="swatch-name">Morado</span>
-            </button>
-            <button class="theme-swatch swatch-blue" data-theme="blue" onclick="applyColorTheme('blue')" title="Azul Océano">
-              <span class="swatch-dot" style="background: linear-gradient(135deg, #3B82F6, #1D4ED8);"></span>
-              <span class="swatch-name">Azul</span>
-            </button>
-            <button class="theme-swatch swatch-red" data-theme="red" onclick="applyColorTheme('red')" title="Rojo Carmesí">
-              <span class="swatch-dot" style="background: linear-gradient(135deg, #EF4444, #B91C1C);"></span>
-              <span class="swatch-name">Rojo</span>
-            </button>
-            <button class="theme-swatch swatch-green" data-theme="green" onclick="applyColorTheme('green')" title="Verde Esmeralda">
-              <span class="swatch-dot" style="background: linear-gradient(135deg, #10B981, #047857);"></span>
-              <span class="swatch-name">Verde</span>
-            </button>
-            <button class="theme-swatch swatch-orange" data-theme="orange" onclick="applyColorTheme('orange')" title="Naranja Atardecer">
-              <span class="swatch-dot" style="background: linear-gradient(135deg, #F97316, #C2410C);"></span>
-              <span class="swatch-name">Naranja</span>
-            </button>
-            <button class="theme-swatch swatch-rose" data-theme="rose" onclick="applyColorTheme('rose')" title="Rosa Fucsia">
-              <span class="swatch-dot" style="background: linear-gradient(135deg, #EC4899, #BE185D);"></span>
-              <span class="swatch-name">Rosa</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="setting-row">
+        <div class="setting-row" style="margin-top: 16px;">
           <span class="setting-label">Velocidad de habla</span>
           <input type="range" id="setting-rate" class="range-slider" min="0.5" max="1.5" step="0.1" value="1.0">
         </div>
@@ -251,7 +217,7 @@
           <input type="range" id="setting-pitch" class="range-slider" min="0.5" max="1.5" step="0.1" value="1.0">
         </div>
 
-        <button class="btn btn-primary" style="margin-top: 16px; width: 100%;" onclick="saveSettings()">Guardar</button>
+        <button class="btn btn-primary" style="margin-top: 20px; width: 100%;" onclick="saveSettings()">Guardar</button>
       </div>
     </div>
 
@@ -259,10 +225,10 @@
     <div id="ios-install-modal" class="modal-overlay hidden">
       <div class="modal-card ios-install-card">
         <div class="ios-app-header">
-          <div class="ios-app-icon-lg">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
+          <div class="ios-app-icon-lg" style="overflow: hidden; background: transparent; box-shadow: none;">
+            <img src="./icons/icon-192.png" alt="Tlahto Logo" class="modal-app-logo">
           </div>
-          <h2 class="ios-app-title">Descarga la APP de Vozzy</h2>
+          <h2 class="ios-app-title">Descarga la APP de Tlahto</h2>
           <p class="ios-app-subtitle">Acceso rápido desde tu pantalla de inicio</p>
         </div>
 
@@ -362,7 +328,7 @@
         <div class="form-group">
           <label for="ef-how-to-communicate" class="form-label">Cómo comunicarse conmigo (opcional)</label>
           <textarea id="ef-how-to-communicate" class="form-input ef-textarea"
-                    placeholder="No puedo hablar, uso Vozzy"></textarea>
+                    placeholder="No puedo hablar, uso Tlahto"></textarea>
         </div>
 
         <!-- Medical documents upload (optional) -->
@@ -414,8 +380,8 @@
          role="dialog" aria-modal="true" aria-labelledby="sos-panel-title">
       <div class="modal-card sos-panel-card">
         <h2 id="sos-panel-title" class="sos-panel-title">Emergencia SOS</h2>
-        <p class="sos-panel-note">Vozzy no puede llamar ni enviar mensajes sin tu confirmacion.
-          Los enlaces abriran tu marcador o app de mensajes. Debes tocar Llamar o Enviar.</p>
+        <p class="sos-panel-note">Tlahto no puede llamar ni enviar mensajes sin tu confirmación.
+          Los enlaces abrirán tu marcador o app de mensajes. Debes tocar Llamar o Enviar.</p>
 
         <!-- 1. SMS con ubicación -->
         <a id="sos-sms-contact" href="#" class="sos-action-btn" role="button">

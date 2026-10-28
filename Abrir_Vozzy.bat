@@ -1,9 +1,9 @@
 @echo off
-title Vozzy - Tu voz, en un toque
+title Tlahto - Tu voz, en un toque
 cd /d "%~dp0"
 
 echo ============================================
-echo        Iniciando Vozzy PWA
+echo        Iniciando Tlahto PWA
 echo ============================================
 echo.
 

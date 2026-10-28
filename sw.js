@@ -1,5 +1,5 @@
 /* ============================================================
-   VOZZY Service Worker  –  v5 (Full Offline Edition)
+   TLAHTO Service Worker  –  v1 (Full Offline Edition)
    Strategy:
      - Core assets: Cache-First  (app siempre corre offline)
      - Stale-While-Revalidate: devuelve caché instantáneo y
@@ -7,7 +7,7 @@
      - Fetch fallback: devuelve index.html para rutas SPA
    ============================================================ */
 
-const CACHE_NAME = 'vozzy-v5';
+const CACHE_NAME = 'tlahto-v2';
 
 // Todos los archivos que la app necesita para funcionar sin red
 const CORE_ASSETS = [
@@ -32,7 +32,7 @@ const CORE_ASSETS = [
 
 // ── INSTALL: Pre-cachea todos los core assets (resiliente) ─────
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing Vozzy v5...');
+  console.log('[SW] Installing Tlahto v1...');
   event.waitUntil(
     caches.open(CACHE_NAME).then(async (cache) => {
       // Usamos allSettled para que un recurso faltante no rompa la instalación
@@ -51,7 +51,7 @@ self.addEventListener('install', (event) => {
 
 // ── ACTIVATE: Limpia cachés antiguas ──────────────────────────
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating Vozzy v5...');
+  console.log('[SW] Activating Tlahto v1...');
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
@@ -63,7 +63,7 @@ self.addEventListener('activate', (event) => {
           })
       )
     ).then(() => {
-      console.log('[SW] Vozzy v5 activo y controlando clientes.');
+      console.log('[SW] Tlahto v1 activo y controlando clientes.');
       return self.clients.claim();
     })
   );
@@ -108,7 +108,7 @@ self.addEventListener('fetch', (event) => {
       if (fallback) return fallback;
 
       // Último recurso
-      return new Response('Vozzy está offline. Instala la app para usarla sin conexión.', {
+      return new Response('Tlahto está offline. Instala la app para usarla sin conexión.', {
         status: 503,
         headers: { 'Content-Type': 'text/plain; charset=utf-8' }
       });

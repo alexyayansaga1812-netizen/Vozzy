@@ -1,9 +1,9 @@
 @echo off
-title Vozzy - Generador de APK Android
+title Tlahto - Generador de APK Android
 cd /d "%~dp0\capacitor-app"
 
 echo ======================================================
-echo           VOZZY - GENERADOR DE APK ANDROID
+echo           TLAHTO - GENERADOR DE APK ANDROID
 echo ======================================================
 echo.
 

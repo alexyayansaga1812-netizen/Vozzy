@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VOZZY - CAA Progressive Web Application Engine
+   TLAHTO - CAA Progressive Web Application Engine
    ========================================================================== */
 
 
@@ -232,18 +232,19 @@ const CATEGORIES = [
 
 // --- Application State ---
 const state = {
-  userName: localStorage.getItem('vozzy_username') || '',
-  welcomeDone: localStorage.getItem('vozzy_welcome_done') === 'true',
-  tutorialDone: localStorage.getItem('vozzy_tutorial_done') === 'true',
-  theme: localStorage.getItem('vozzy_theme') || 'light',
-  colorTheme: localStorage.getItem('vozzy_color_theme') || 'multicolor',
-  phraseUsage: JSON.parse(localStorage.getItem('vozzy_phrase_usage') || '{}'),
-  speechSettings: JSON.parse(localStorage.getItem('vozzy_speech_settings') || '{"pitch":1.0,"rate":1.0}'),
+  userName: localStorage.getItem('tlahto_username') || localStorage.getItem('vozzy_username') || '',
+  welcomeDone: (localStorage.getItem('tlahto_welcome_done') || localStorage.getItem('vozzy_welcome_done')) === 'true',
+  tutorialDone: (localStorage.getItem('tlahto_tutorial_done') || localStorage.getItem('vozzy_tutorial_done')) === 'true',
+  theme: 'light',
+  phraseUsage: JSON.parse(localStorage.getItem('tlahto_phrase_usage') || localStorage.getItem('vozzy_phrase_usage') || '{}'),
+  speechSettings: JSON.parse(localStorage.getItem('tlahto_speech_settings') || localStorage.getItem('vozzy_speech_settings') || '{"pitch":1.0,"rate":1.0}'),
   currentCategory: null,
   lastSpokenText: '',
   deferredInstallPrompt: null,
   tutorialSlide: 0
 };
+localStorage.setItem('tlahto_theme', 'light');
+localStorage.setItem('vozzy_theme', 'light');
 
 function isAppStandalone() {
   return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
@@ -281,7 +282,7 @@ function showOfflineVoiceNotice() {
         <line x1="12" y1="8" x2="12" y2="12"/>
         <line x1="12" y1="16" x2="12.01" y2="16"/>
       </svg>
-      <span>No hay voz en español disponible sin conexión. Descarga una voz en español en los ajustes de voz de tu dispositivo para usar Vozzy sin internet.</span>
+      <span>No hay voz en español disponible sin conexión. Descarga una voz en español en los ajustes de voz de tu dispositivo para usar Tlahto sin internet.</span>
       <button onclick="dismissOfflineVoiceNotice()" aria-label="Cerrar aviso">&times;</button>
     </div>
   `;
@@ -339,9 +340,92 @@ if ('speechSynthesis' in window) {
   loadSpanishVoices();
 }
 
-function speakText(text, cardEl = null) {
-  if (!text || !('speechSynthesis' in window)) return;
+function showTTSErrorToast(errorMsg) {
+  const existing = document.getElementById('vozzy-tts-error-toast');
+  if (existing) existing.remove();
 
+  const toast = document.createElement('div');
+  toast.id = 'vozzy-tts-error-toast';
+  toast.className = 'vozzy-voice-notice';
+  toast.setAttribute('role', 'alert');
+  toast.style.borderColor = 'var(--color-red-main, #ef4444)';
+
+  const inner = document.createElement('div');
+  inner.className = 'vozzy-voice-notice-inner';
+  inner.innerHTML = `
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="12"/>
+      <line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+    <button onclick="this.closest('.vozzy-voice-notice').remove()" aria-label="Cerrar aviso">&times;</button>
+  `;
+
+  const span = document.createElement('span');
+  span.textContent = `Error en voz (TTS): ${errorMsg}. Revisa los ajustes de texto a voz de tu dispositivo.`;
+  const closeBtn = inner.querySelector('button');
+  inner.insertBefore(span, closeBtn);
+
+  toast.appendChild(inner);
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    if (toast.parentNode) {
+      toast.classList.add('fade-out');
+      setTimeout(() => toast.remove(), 300);
+    }
+  }, 5000);
+}
+
+function speakText(text, cardEl = null) {
+  if (!text) return;
+
+  const isNative = typeof window.Capacitor !== 'undefined' &&
+    typeof window.Capacitor.isNativePlatform === 'function' &&
+    window.Capacitor.isNativePlatform();
+  const nativeTTS = isNative && window.Capacitor.Plugins && window.Capacitor.Plugins.TextToSpeech;
+
+  // Si no es nativo y no hay speechSynthesis disponible en el navegador, salir
+  if (!nativeTTS && !('speechSynthesis' in window)) return;
+
+  // Actualización de estado y UI común para ambos caminos
+  state.lastSpokenText = text;
+  trackPhraseUsage(text);
+
+  const floatingBar = document.getElementById('floating-voice-bar');
+  const textLabel = document.getElementById('floating-spoken-text');
+  if (textLabel) textLabel.textContent = `"${text}"`;
+  if (floatingBar) floatingBar.classList.remove('hidden');
+
+  if (cardEl) {
+    document.querySelectorAll('.card-item').forEach(c => c.classList.remove('active-speaking'));
+    cardEl.classList.add('active-speaking');
+  }
+
+  // Camino 1: Plugin nativo Capacitor TextToSpeech
+  if (nativeTTS) {
+    nativeTTS.stop().catch(() => {});
+    nativeTTS.speak({
+      text: text,
+      lang: 'es-MX',
+      rate: state.speechSettings.rate,
+      pitch: state.speechSettings.pitch
+    }).then(() => {
+      if (cardEl) cardEl.classList.remove('active-speaking');
+      setTimeout(() => {
+        if (floatingBar) floatingBar.classList.add('hidden');
+      }, 1200);
+    }).catch((err) => {
+      console.error('TTS error (native):', err);
+      if (cardEl) cardEl.classList.remove('active-speaking');
+      if (floatingBar) floatingBar.classList.add('hidden');
+      const errCode = (err && (err.message || err.code)) ? (err.message || err.code) : String(err);
+      showTTSErrorToast(errCode);
+    });
+    return;
+  }
+
+  // Camino 2: Web Speech API (PWA / Navegador)
   if (!hasOfflineSpanishVoice && !offlineVoiceWarningDismissed) {
     showOfflineVoiceNotice();
   }
@@ -354,22 +438,6 @@ function speakText(text, cardEl = null) {
   utterance.pitch = state.speechSettings.pitch;
   utterance.lang = selectedVoice ? selectedVoice.lang : 'es-MX';
 
-  state.lastSpokenText = text;
-
-  // Track Usage for "Usados frecuentemente"
-  trackPhraseUsage(text);
-
-  // UI Feedback
-  const floatingBar = document.getElementById('floating-voice-bar');
-  const textLabel = document.getElementById('floating-spoken-text');
-  if (textLabel) textLabel.textContent = `"${text}"`;
-  if (floatingBar) floatingBar.classList.remove('hidden');
-
-  if (cardEl) {
-    document.querySelectorAll('.card-item').forEach(c => c.classList.remove('active-speaking'));
-    cardEl.classList.add('active-speaking');
-  }
-
   utterance.onend = () => {
     if (cardEl) cardEl.classList.remove('active-speaking');
     setTimeout(() => {
@@ -379,15 +447,29 @@ function speakText(text, cardEl = null) {
     }, 1200);
   };
 
-  utterance.onerror = () => {
+  utterance.onerror = (e) => {
+    if (e.error === 'interrupted' || e.error === 'canceled') return;
+    console.error('TTS error:', e.error);
     if (cardEl) cardEl.classList.remove('active-speaking');
     if (floatingBar) floatingBar.classList.add('hidden');
+    showTTSErrorToast(e.error || 'desconocido');
   };
 
-  window.speechSynthesis.speak(utterance);
+  setTimeout(() => {
+    window.speechSynthesis.speak(utterance);
+  }, 80);
 }
 
 function stopSpeech() {
+  const isNative = typeof window.Capacitor !== 'undefined' &&
+    typeof window.Capacitor.isNativePlatform === 'function' &&
+    window.Capacitor.isNativePlatform();
+  const nativeTTS = isNative && window.Capacitor.Plugins && window.Capacitor.Plugins.TextToSpeech;
+
+  if (nativeTTS) {
+    nativeTTS.stop().catch(() => {});
+  }
+
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
   }
@@ -449,34 +531,18 @@ function updateSmartCategoryData() {
   }
 }
 
-// --- Theme Controller ---
-function applyTheme(theme) {
-  state.theme = theme;
-  document.documentElement.setAttribute('data-theme', theme);
-  localStorage.setItem('vozzy_theme', theme);
-
-  const themeBtn = document.getElementById('theme-toggle-btn');
-  if (themeBtn) {
-    themeBtn.innerHTML = theme === 'dark' ? SVG_ICONS.sun : SVG_ICONS.moon;
-  }
+// --- Theme Controller (Fijo a Carmín y Blanco) ---
+function applyTheme() {
+  state.theme = 'light';
+  document.documentElement.setAttribute('data-theme', 'light');
 }
 
 function toggleTheme() {
-  applyTheme(state.theme === 'light' ? 'dark' : 'light');
+  // Desactivado: la app utiliza exclusivamente la paleta Carmín y Blanco
 }
 
-function applyColorTheme(themeName) {
-  state.colorTheme = themeName;
-  document.documentElement.setAttribute('data-color-theme', themeName);
-  localStorage.setItem('vozzy_color_theme', themeName);
-
-  document.querySelectorAll('.theme-swatch').forEach(btn => {
-    if (btn.dataset.theme === themeName) {
-      btn.classList.add('active');
-    } else {
-      btn.classList.remove('active');
-    }
-  });
+function applyColorTheme() {
+  // Paleta principal fija a Guinda, Carmín y Blanco
 }
 
 // --- Navigation & Router ---
@@ -668,8 +734,8 @@ function updateTutorialSlide() {
       svg: `<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>`
     },
     {
-      title: 'Toca un ícono y Vozzy habla',
-      desc: 'Al presionar cualquier tarjeta, Vozzy la reproducirá en voz alta inmediatamente.',
+      title: 'Toca un ícono y Tlahto habla',
+      desc: 'Al presionar cualquier tarjeta, Tlahto la reproducirá en voz alta inmediatamente.',
       svg: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 2v4"/><path d="M12 18v4"/><path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 16.24l2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/></svg>`
     },
     {
@@ -722,16 +788,6 @@ function openSettingsModal() {
   const pitchSlider = document.getElementById('setting-pitch');
   speedSlider.value = state.speechSettings.rate;
   pitchSlider.value = state.speechSettings.pitch;
-  
-  // Highlight active theme swatch
-  document.querySelectorAll('.theme-swatch').forEach(btn => {
-    if (btn.dataset.theme === state.colorTheme) {
-      btn.classList.add('active');
-    } else {
-      btn.classList.remove('active');
-    }
-  });
-
   document.getElementById('settings-modal').classList.remove('hidden');
 }
 
@@ -831,8 +887,8 @@ function openInstallModal() {
   const subtitleEl = modal.querySelector('.ios-app-subtitle');
   const stepsBox = modal.querySelector('.ios-steps-box');
 
-  if (titleEl) titleEl.textContent = 'Descarga la APP de Vozzy';
-  if (subtitleEl) subtitleEl.textContent = 'Instala Vozzy en tu iPhone o iPad en 3 simples pasos';
+  if (titleEl) titleEl.textContent = 'Descarga la APP de Tlahto';
+  if (subtitleEl) subtitleEl.textContent = 'Instala Tlahto en tu iPhone o iPad en 3 simples pasos';
 
   if (stepsBox) {
     stepsBox.innerHTML = `
@@ -862,13 +918,14 @@ function closeIOSInstallModal() {
 
 // --- App Initialization ---
 window.addEventListener('DOMContentLoaded', () => {
-  // Apply saved theme & color theme
-  applyTheme(state.theme);
-  applyColorTheme(state.colorTheme);
+  // Apply clean Carmín theme
+  applyTheme();
 
-  // Render initial icons into buttons
-  document.getElementById('logo-icon-container').innerHTML = SVG_ICONS.mic;
-  document.getElementById('theme-toggle-btn').innerHTML = state.theme === 'dark' ? SVG_ICONS.sun : SVG_ICONS.moon;
+  // Render initial icons into buttons & ensure app logo
+  const logoContainer = document.getElementById('logo-icon-container');
+  if (logoContainer && !logoContainer.querySelector('img')) {
+    logoContainer.innerHTML = '<img src="./icons/icon-192.png" alt="Tlahto Logo" class="brand-logo-img">';
+  }
   document.getElementById('settings-toggle-btn').innerHTML = SVG_ICONS.settings;
   document.getElementById('profile-toggle-btn').innerHTML = SVG_ICONS.user;
   document.getElementById('back-to-home-btn').innerHTML = `${SVG_ICONS.back} <span>Inicio</span>`;

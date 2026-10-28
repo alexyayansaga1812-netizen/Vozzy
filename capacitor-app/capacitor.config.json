@@ -1,11 +1,11 @@
 {
-  "appId": "com.vozzy.app",
-  "appName": "Vozzy",
+  "appId": "com.tlahto.app",
+  "appName": "Tlahto",
   "webDir": "www",
   "server": {
     "androidScheme": "https",
     "cleartext": false,
-    "hostname": "vozzy.app"
+    "hostname": "tlahto.app"
   },
   "android": {
     "allowMixedContent": false,
@@ -26,7 +26,7 @@
     "SplashScreen": {
       "launchShowDuration": 2000,
       "launchAutoHide": true,
-      "backgroundColor": "#7c3aed",
+      "backgroundColor": "#C41C3B",
       "androidScaleType": "CENTER_CROP",
       "showSpinner": false,
       "splashFullScreen": true,
@@ -34,7 +34,7 @@
     },
     "StatusBar": {
       "style": "LIGHT",
-      "backgroundColor": "#7c3aed"
+      "backgroundColor": "#C41C3B"
     }
   }
 }

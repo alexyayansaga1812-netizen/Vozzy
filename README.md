@@ -1,6 +1,6 @@
-# Vozzy - Tu voz, en un toque
+# Tlahto - Tu voz, en un toque
 
-**Vozzy** es una herramienta de Comunicación Aumentativa y Alternativa (CAA / AAC) diseñada como Progressive Web App (PWA) rápida, accesible y moderna para personas mudas o con dificultades del habla.
+**Tlahto** es una herramienta de Comunicación Aumentativa y Alternativa (CAA / AAC) diseñada como Progressive Web App (PWA) rápida, accesible y moderna para personas con dificultades del habla o mudas.
 
 ---
 
@@ -9,28 +9,28 @@
 - 🗣️ **Síntesis de voz instantánea (TTS):** Reproduce frases organizadas por categorías cotidianas con selección de voz, velocidad y tono personalizables.
 - ✍️ **Redactor de mensajes libres:** Área de texto con frases rápidas y lectura en voz alta.
 - 🚨 **Módulo de Emergencia SOS:** Llamadas al 911, SMS con GPS, ficha médica digital.
-- 🎨 **Diseño adaptativo:** Temas de color, modo oscuro, animaciones fluidas.
+- 🎨 **Paleta Identitaria Guinda, Carmín y Blanco:** Identidad visual inspirada en CBTIS 294, elegante y de alto contraste.
 - 📴 **100% Offline:** Funciona sin internet una vez instalada.
 
 ---
 
 ## 📴 Funcionamiento Offline (PWA)
 
-La app usa un **Service Worker v5** con estrategia **Cache-First + Stale-While-Revalidate**:
+La app usa un **Service Worker** con estrategia **Cache-First + Stale-While-Revalidate**:
 
 - Todos los assets (HTML, CSS, JS, fuentes, íconos) se cachean en la primera visita.
 - A partir de entonces, la app carga instantáneamente aunque no haya red.
 - Si hay conexión, los archivos se actualizan en segundo plano automáticamente.
-- Las fuentes Inter se cargan **localmente** desde `/fonts/` (sin Google Fonts).
+- Las fuentes Inter se cargan **localmente** desde `/fonts/` (sin dependencias externas).
 
 ---
 
-## 📱 Cómo instalar Vozzy (sin conexión permanente)
+## 📱 Cómo instalar Tlahto (sin conexión permanente)
 
 ### Android — Instalar como PWA (recomendado)
-1. Abre Chrome y visita la URL de Vozzy.
+1. Abre Chrome y visita la URL de Tlahto.
 2. Toca el menú ⋮ → **"Agregar a pantalla de inicio"** o **"Instalar app"**.
-3. La app aparece en tu lanzador como una app nativa.
+3. La app aparece en tu lanzador como una app nativa con el ícono oficial.
 
 ### Android — Instalar como APK nativo
 Ver sección **"Generar APK Android"** más abajo.
@@ -40,7 +40,7 @@ Ver sección **"Generar APK Android"** más abajo.
 2. Toca el botón **Compartir ⬆️** en la barra inferior.
 3. Selecciona **"Agregar a pantalla de inicio"**.
 4. Toca **"Agregar"** en la esquina superior derecha.
-5. Vozzy aparece en tu pantalla de inicio como app nativa.
+5. Tlahto aparece en tu pantalla de inicio como app nativa.
 
 ### Windows / macOS — Instalar como PWA
 1. Abre Chrome/Edge y visita la URL de Vozzy.
