@@ -636,6 +636,113 @@ h4 {
   stroke-linejoin: round;
 }
 
+/* Card AI Image System (V2) */
+.card-img-ia {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.16));
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: block;
+  user-select: none;
+  pointer-events: none;
+}
+
+.card-item:hover .card-img-ia {
+  transform: scale(1.15) rotate(2deg);
+}
+
+.card-item:active .card-img-ia {
+  transform: scale(0.92);
+}
+
+.category-header-img-ia {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.2));
+}
+
+/* En V2 el contenedor de ícono se adapta a las imágenes 3D */
+body.ui-v2 .card-icon-wrapper {
+  background: rgba(255, 255, 255, 0.28);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
+}
+
+/* UI Version Picker (Settings Modal) */
+.ui-version-picker {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.ui-version-btn {
+  background: var(--bg-card, #FFFFFF);
+  border: 2px solid var(--border-subtle, #E2E8F0);
+  border-radius: var(--radius-md, 12px);
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: left;
+  font-family: inherit;
+  color: var(--text-main);
+  outline: none;
+  position: relative;
+}
+
+.ui-version-btn:hover {
+  border-color: var(--color-carmin-light, #DF294E);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(196, 28, 59, 0.12);
+}
+
+.ui-version-btn.active {
+  border-color: var(--color-carmin-main, #C41C3B);
+  background: rgba(196, 28, 59, 0.06);
+  box-shadow: 0 0 0 2px var(--color-carmin-glow, rgba(196, 28, 59, 0.28));
+}
+
+.version-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  border-radius: 6px;
+  background: var(--border-main, #CBD5E1);
+  color: var(--text-main);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.version-badge-v2 {
+  background: var(--brand-gradient, linear-gradient(135deg, #B81D3C 0%, #C41C3B 50%, #E03554 100%));
+  color: #FFFFFF;
+}
+
+.version-info strong {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.2;
+}
+
+.version-info small {
+  display: block;
+  font-size: 0.76rem;
+  color: var(--text-muted, #64748B);
+  margin-top: 2px;
+  line-height: 1.25;
+}
+
 /* Category Card Carmín Variations (Luminosas, Vivas y Elegantes) */
 .cat-card-purple .card-icon-wrapper {
   background: linear-gradient(135deg, #B81D3C, #D82B4E);

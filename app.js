@@ -230,12 +230,48 @@ const CATEGORIES = [
   }
 ];
 
+// --- 3D AI Pictograms Map (V2 Mode) ---
+const PICTOGRAM_IMAGES = {
+  // Categorías principales
+  'frequent': './assets/pictograms/frequent.png',
+  'casa': './assets/pictograms/casa.jpg',
+  'escuela': './assets/pictograms/escuela.jpg',
+  'doctor': './assets/pictograms/doctor.png',
+  'comida': './assets/pictograms/comida.jpg',
+  'emociones': './assets/pictograms/emociones.jpg',
+  'saludos': './assets/pictograms/saludos.jpg',
+  'transporte': './assets/pictograms/transporte.png',
+  'juegos': './assets/pictograms/juegos.png',
+  'emergencias': './assets/pictograms/emergencias.png',
+  'custom_msg': './assets/pictograms/custom_msg.png',
+
+  // Iconos de tarjetas y frases
+  'home': './assets/pictograms/casa.jpg',
+  'school': './assets/pictograms/escuela.jpg',
+  'doctor': './assets/pictograms/doctor.png',
+  'food': './assets/pictograms/food.png',
+  'emotions': './assets/pictograms/emociones.jpg',
+  'greetings': './assets/pictograms/saludos.jpg',
+  'transport': './assets/pictograms/transporte.png',
+  'games': './assets/pictograms/juegos.png',
+  'emergency': './assets/pictograms/emergency.png',
+  'custom': './assets/pictograms/custom.png',
+  'star': './assets/pictograms/frequent.png',
+  'moon': './assets/pictograms/moon.png',
+  'sun': './assets/pictograms/sun.png',
+  'check': './assets/pictograms/check.png',
+  'user': './assets/pictograms/user.png',
+  'mic': './assets/pictograms/mic.png',
+  'repeat': './assets/pictograms/repeat.png'
+};
+
 // --- Application State ---
 const state = {
   userName: localStorage.getItem('tlahto_username') || localStorage.getItem('vozzy_username') || '',
   welcomeDone: (localStorage.getItem('tlahto_welcome_done') || localStorage.getItem('vozzy_welcome_done')) === 'true',
   tutorialDone: (localStorage.getItem('tlahto_tutorial_done') || localStorage.getItem('vozzy_tutorial_done')) === 'true',
   theme: 'light',
+  uiVersion: localStorage.getItem('tlahto_ui_version') || 'v2', // 'v1': Minimalista, 'v2': Ilustrado IA
   phraseUsage: JSON.parse(localStorage.getItem('tlahto_phrase_usage') || localStorage.getItem('vozzy_phrase_usage') || '{}'),
   speechSettings: JSON.parse(localStorage.getItem('tlahto_speech_settings') || localStorage.getItem('vozzy_speech_settings') || '{"pitch":1.0,"rate":1.0}'),
   currentCategory: null,
@@ -317,16 +353,16 @@ function loadSpanishVoices() {
   if (localSpanishVoices.length > 0) {
     hasOfflineSpanishVoice = true;
     selectedVoice = localSpanishVoices.find(v => v.lang === 'es-MX') ||
-                    localSpanishVoices.find(v => v.lang === 'es-US') ||
-                    localSpanishVoices.find(v => v.lang === 'es-ES') ||
-                    localSpanishVoices[0];
+      localSpanishVoices.find(v => v.lang === 'es-US') ||
+      localSpanishVoices.find(v => v.lang === 'es-ES') ||
+      localSpanishVoices[0];
   } else if (spanishVoices.length > 0) {
     // Hay voces en español pero ninguna localService === true
     hasOfflineSpanishVoice = false;
     selectedVoice = spanishVoices.find(v => v.lang === 'es-MX') ||
-                    spanishVoices.find(v => v.lang === 'es-US') ||
-                    spanishVoices.find(v => v.lang === 'es-ES') ||
-                    spanishVoices[0];
+      spanishVoices.find(v => v.lang === 'es-US') ||
+      spanishVoices.find(v => v.lang === 'es-ES') ||
+      spanishVoices[0];
   } else {
     // Sin voces en español disponibles
     hasOfflineSpanishVoice = false;
@@ -404,7 +440,7 @@ function speakText(text, cardEl = null) {
 
   // Camino 1: Plugin nativo Capacitor TextToSpeech
   if (nativeTTS) {
-    nativeTTS.stop().catch(() => {});
+    nativeTTS.stop().catch(() => { });
     nativeTTS.speak({
       text: text,
       lang: 'es-MX',
@@ -467,7 +503,7 @@ function stopSpeech() {
   const nativeTTS = isNative && window.Capacitor.Plugins && window.Capacitor.Plugins.TextToSpeech;
 
   if (nativeTTS) {
-    nativeTTS.stop().catch(() => {});
+    nativeTTS.stop().catch(() => { });
   }
 
   if ('speechSynthesis' in window) {
@@ -599,10 +635,18 @@ function renderHomeScreen() {
       badgeHTML = `<span class="smart-badge" id="smart-badge-count">${cat.phrases.length}</span>`;
     }
 
+    let iconHTML = '';
+    const picSrc = PICTOGRAM_IMAGES[cat.id];
+    if (state.uiVersion === 'v2' && picSrc) {
+      iconHTML = `<img src="${picSrc}" alt="${cat.name}" class="card-img-ia" loading="lazy">`;
+    } else {
+      iconHTML = `<div class="card-icon">${SVG_ICONS[cat.icon] || SVG_ICONS.star}</div>`;
+    }
+
     card.innerHTML = `
       ${badgeHTML}
       <div class="card-icon-wrapper" data-icon="${cat.icon}">
-        <div class="card-icon">${SVG_ICONS[cat.icon] || SVG_ICONS.star}</div>
+        ${iconHTML}
       </div>
       <div class="card-title">${cat.name}</div>
     `;
@@ -616,9 +660,18 @@ function renderCategoryScreen(category) {
 
   const catColor = category.color || 'purple';
   titleEl.className = 'section-title';
+
+  let badgeIconHTML = '';
+  const catPicSrc = PICTOGRAM_IMAGES[category.id];
+  if (state.uiVersion === 'v2' && catPicSrc) {
+    badgeIconHTML = `<img src="${catPicSrc}" alt="${category.name}" class="category-header-img-ia">`;
+  } else {
+    badgeIconHTML = SVG_ICONS[category.icon] || '';
+  }
+
   titleEl.innerHTML = `
     <div class="category-header-badge cat-card-${catColor}" data-icon="${category.icon}">
-      ${SVG_ICONS[category.icon] || ''}
+      ${badgeIconHTML}
     </div>
     <span>${category.name}</span>
   `;
@@ -628,9 +681,17 @@ function renderCategoryScreen(category) {
   const writerCard = document.createElement('div');
   writerCard.className = 'card-item smart-card cat-card-violet';
   writerCard.onclick = () => openCategory('custom_msg');
+
+  let writerIconHTML = '';
+  if (state.uiVersion === 'v2' && PICTOGRAM_IMAGES['custom_msg']) {
+    writerIconHTML = `<img src="${PICTOGRAM_IMAGES['custom_msg']}" alt="Escribe tu mensaje" class="card-img-ia" loading="lazy">`;
+  } else {
+    writerIconHTML = `<div class="card-icon">${SVG_ICONS.custom}</div>`;
+  }
+
   writerCard.innerHTML = `
     <div class="card-icon-wrapper" data-icon="custom">
-      <div class="card-icon">${SVG_ICONS.custom}</div>
+      ${writerIconHTML}
     </div>
     <div class="card-title">Escribe tu mensaje</div>
   `;
@@ -657,11 +718,18 @@ function renderCategoryScreen(category) {
     card.className = `card-item phrase-card cat-card-${catColor}`;
     card.onclick = () => speakText(phrase.text, card);
 
-    const iconSVG = SVG_ICONS[phrase.icon] || SVG_ICONS.mic;
+    let phraseIconHTML = '';
+    const phrasePic = PICTOGRAM_IMAGES[phrase.icon];
+    if (state.uiVersion === 'v2' && phrasePic) {
+      phraseIconHTML = `<img src="${phrasePic}" alt="${phrase.text}" class="card-img-ia" loading="lazy">`;
+    } else {
+      const iconSVG = SVG_ICONS[phrase.icon] || SVG_ICONS.mic;
+      phraseIconHTML = `<div class="card-icon">${iconSVG}</div>`;
+    }
 
     card.innerHTML = `
       <div class="card-icon-wrapper" data-icon="${phrase.icon}">
-        <div class="card-icon">${iconSVG}</div>
+        ${phraseIconHTML}
       </div>
       <div class="card-title">${phrase.text}</div>
     `;
@@ -782,12 +850,51 @@ function nextTutorialSlide() {
   }
 }
 
+// --- UI Version System (V1 Minimalista vs V2 Ilustrado IA) ---
+function applyUiVersion() {
+  if (state.uiVersion === 'v2') {
+    document.body.classList.add('ui-v2');
+  } else {
+    document.body.classList.remove('ui-v2');
+  }
+}
+
+function updateUiVersionPickerUI() {
+  const v1Btn = document.getElementById('version-btn-v1');
+  const v2Btn = document.getElementById('version-btn-v2');
+  if (v1Btn && v2Btn) {
+    if (state.uiVersion === 'v1') {
+      v1Btn.classList.add('active');
+      v2Btn.classList.remove('active');
+    } else {
+      v2Btn.classList.add('active');
+      v1Btn.classList.remove('active');
+    }
+  }
+}
+
+function setUiVersion(version) {
+  state.uiVersion = version;
+  localStorage.setItem('tlahto_ui_version', version);
+  applyUiVersion();
+  updateUiVersionPickerUI();
+
+  // Re-render current active screen
+  const categoryView = document.getElementById('category-view');
+  if (categoryView && !categoryView.classList.contains('hidden') && state.currentCategory) {
+    renderCategoryScreen(state.currentCategory);
+  } else {
+    renderHomeScreen();
+  }
+}
+
 // --- Settings Modal Logic ---
 function openSettingsModal() {
   const speedSlider = document.getElementById('setting-rate');
   const pitchSlider = document.getElementById('setting-pitch');
   speedSlider.value = state.speechSettings.rate;
   pitchSlider.value = state.speechSettings.pitch;
+  updateUiVersionPickerUI();
   document.getElementById('settings-modal').classList.remove('hidden');
 }
 
@@ -918,8 +1025,9 @@ function closeIOSInstallModal() {
 
 // --- App Initialization ---
 window.addEventListener('DOMContentLoaded', () => {
-  // Apply clean Carmín theme
+  // Apply clean Carmín theme & UI version
   applyTheme();
+  applyUiVersion();
 
   // Render initial icons into buttons & ensure app logo
   const logoContainer = document.getElementById('logo-icon-container');
