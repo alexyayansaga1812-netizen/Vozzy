@@ -70,7 +70,7 @@
   --radius-md: 12px;
   --radius-sm: 8px;
   --radius-full: 9999px;
-  --header-height: 72px;
+  --header-height: 98px;
 
   /* Color Palette Tokens */
   --color-carmin-main: #C41C3B;
@@ -224,26 +224,26 @@ h4 {
 .logo-group {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   cursor: pointer;
   flex-shrink: 0;
   user-select: none;
 }
 
 .logo-badge {
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
+  width: 78px;
+  height: 78px;
+  border-radius: 20px;
   background: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #FFFFFF;
-  box-shadow: 0 4px 14px rgba(122, 14, 35, 0.25);
+  box-shadow: 0 4px 18px rgba(122, 14, 35, 0.26);
   transition: transform 0.2s ease;
   flex-shrink: 0;
   overflow: hidden;
-  border: 1.5px solid var(--border-subtle);
+  border: 2px solid var(--border-subtle);
 }
 
 .brand-logo-img {
@@ -265,12 +265,12 @@ h4 {
 }
 
 .logo-group:hover .logo-badge {
-  transform: scale(1.05) rotate(-3deg);
+  transform: scale(1.04) rotate(-2deg);
 }
 
 .logo-badge svg {
-  width: 28px;
-  height: 28px;
+  width: 42px;
+  height: 42px;
   stroke: var(--primary-accent);
   fill: none;
   stroke-width: 2.2;
@@ -284,10 +284,10 @@ h4 {
 }
 
 .brand-title {
-  font-size: 1.85rem;
-  font-weight: 850;
-  letter-spacing: -0.035em;
-  line-height: 1.05;
+  font-size: 2.75rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1;
   background: var(--brand-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -298,11 +298,11 @@ h4 {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.88rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: var(--text-muted);
   white-space: nowrap;
-  margin-top: 1px;
+  margin-top: 2px;
 }
 
 .nav-actions {
@@ -364,7 +364,7 @@ h4 {
    ========================================================================== */
 @media (max-width: 640px) {
   :root {
-    --header-height: 66px;
+    --header-height: 86px;
   }
 
   .header {
@@ -373,22 +373,22 @@ h4 {
   }
 
   .logo-group {
-    gap: 10px;
+    gap: 12px;
   }
 
   .logo-badge {
-    width: 48px;
-    height: 48px;
-    border-radius: 13px;
+    width: 68px;
+    height: 68px;
+    border-radius: 17px;
   }
 
   .logo-badge svg {
-    width: 24px;
-    height: 24px;
+    width: 36px;
+    height: 36px;
   }
 
   .brand-title {
-    font-size: 1.55rem;
+    font-size: 2.25rem;
   }
 
   /* Ocultar 'Hola' en la barra de móviles para que no ocupe espacio horizontal */
@@ -437,28 +437,32 @@ h4 {
 
 /* Teléfonos muy compactos (<= 380px como iPhone SE, etc.) */
 @media (max-width: 380px) {
+  :root {
+    --header-height: 78px;
+  }
+
   .header {
     padding: 0 6px 0 4px;
     gap: 6px;
   }
 
   .logo-group {
-    gap: 7px;
+    gap: 8px;
   }
 
   .logo-badge {
-    width: 42px;
-    height: 42px;
-    border-radius: 11px;
+    width: 58px;
+    height: 58px;
+    border-radius: 15px;
   }
 
   .logo-badge svg {
-    width: 21px;
-    height: 21px;
+    width: 30px;
+    height: 30px;
   }
 
   .brand-title {
-    font-size: 1.35rem;
+    font-size: 1.85rem;
   }
 
   .nav-actions {

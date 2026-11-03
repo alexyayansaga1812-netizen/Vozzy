@@ -7,7 +7,7 @@
      - Fetch fallback: devuelve index.html para rutas SPA
    ============================================================ */
 
-const CACHE_NAME = 'tlahto-v3';
+const CACHE_NAME = 'tlahto-v4';
 
 // Todos los archivos que la app necesita para funcionar sin red
 const CORE_ASSETS = [
